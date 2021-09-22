@@ -53,6 +53,8 @@ class ExperimentSetup:
 
         # Apps and Services
         self.TOTAL_APPS_NUMBER = 10
+        # self.func_APPGENERATION = lambda: nx.gn_graph(random.randint(1,1))
+        # x = self.func_APPGENERATION()
         self.func_APPGENERATION = "nx.gn_graph(random.randint(1,1))"  # Algorithm for the generation of the random applications
         self.func_SERVICEINSTR = "random.randint(20000,60000)"  # INSTR --> Considering the nodespeed the values should be between 200 & 600 MS
         self.func_SERVICEMESSAGESIZE = "random.randint(1500000,4500000)"  # BYTES --> Considering the BW the values should be between 20 & 60 MS
@@ -91,13 +93,9 @@ class ExperimentSetup:
         self.nodeFreeResources = {}
         self.nodeSpeed = {}
 
+        node_positions = nx.spring_layout(self.G, seed=15612357, scale=500, center=[500, 500])
+
         for i in self.G.nodes:
-            '''
-                    self.func_NODE_PROCESS_RESOURCES = "random.uniform(0.20, 1.00)"
-        self.func_NODE_RAM_RESOURECES = "random.randint(10,25)"  # MB RAM #random distribution for the resources of the fog devices
-        self.func_NODE_STORAGE_RESOURCES = "random.uniform(0.20, 1.00)"  # MB STORAGE
-        self.func_NODE_TIME_AVAILABILITY = "random.randint(100, 2000)" 
-            '''
             # CPU | MEM | DISK | TIME
             node_cpu = eval(self.func_NODE_PROCESS_RESOURCES)
             node_ram = eval(self.func_NODE_RAM_RESOURECES)
@@ -109,15 +107,14 @@ class ExperimentSetup:
             current_node_resources['RAM'] = node_ram
             current_node_resources['STORAGE'] = node_storage
             current_node_resources['TIME'] = node_time_availability
+            current_node_resources['x'] = round(node_positions[i][0])
+            current_node_resources['y'] = round(node_positions[i][1])
 
             # replaced single RAM value with the dictionary of multiple resource requirements
             # self.nodeResources[i] = eval(self.func_NODE_RAM_RESOURECES)
             self.nodeResources[i] = current_node_resources
             self.nodeSpeed[i] = eval(self.func_NODESPEED)
 
-        node_positions = nx.spring_layout(self.G, seed=15612357, scale=500, center=[500, 500])
-
-        for i in self.G.nodes:
             myNode = {}
             myNode['id'] = i
             myNode['RAM'] = self.nodeResources[i]['RAM']
@@ -126,8 +123,8 @@ class ExperimentSetup:
             myNode['CPU'] = self.nodeResources[i]['CPU']
             myNode['STORAGE'] = self.nodeResources[i]['STORAGE']
             myNode['TIME'] = self.nodeResources[i]['TIME']
-            myNode['x'] = round(node_positions[i][0])
-            myNode['y'] = round(node_positions[i][1])
+            myNode['x'] = self.nodeResources[i]['x']
+            myNode['y'] = self.nodeResources[i]['y']
             myNode['type'] = 'FOG'
             self.devices.append(myNode)
 
@@ -196,6 +193,8 @@ class ExperimentSetup:
         current_node_resources['RAM'] = self.CLOUD_RAM_RESOURCES
         current_node_resources['STORAGE'] = self.CLOUD_STORAGE_RESOURCES
         current_node_resources['TIME'] = self.CLOUD_TIME_AVAILABILITY
+        current_node_resources['x'] = self.CLOUD_X
+        current_node_resources['y'] = self.CLOUD_Y
         self.nodeResources[self.cloudId] = current_node_resources
 
         # At the begging all the resources on the nodes are free
@@ -439,6 +438,47 @@ class ExperimentSetup:
         userFile.write(json.dumps(userJson))
         userFile.close()
 
+    def memeticPlacement(self):
+        servicesInFog = 0
+        servicesInCloud = 0
+        allAlloc = {}
+        myAllocationList = list()
+        index_to_fogid = {}
+        index_to_module_app = {}
+
+        # make a numpy array of fog resources excluding gateway devices
+        # map index to fog device id
+        index = 0
+        hosts_resources = list()
+        for k, v in self.nodeResources.items():
+            if k not in self.gatewaysDevices:
+                index_to_fogid[index] = k
+                index += 1
+                # CPU | MEM | DISK | TIME
+                cpu = v['CPU']
+                ram = v['RAM']
+                storage = v['STORAGE']
+                time_availability = v['TIME']
+                x = v['x']
+                y = v['y']
+                hosts_resources.append(np.array([cpu, ram, storage, time_availability, x, y]))
+        hosts_resources = np.stack(hosts_resources)
+
+        services_requirements = list()
+        for app_num, app in enumerate(self.appsRequests):
+            for instance, gw_id in enumerate(self.appsRequests[app_num]):
+                for index, module in enumerate(list(self.apps[app_num].nodes)):
+                    res_required = self.servicesResources[module]
+                    y = 0
+                    # CPU | RAM | STORAGE | PRIORITY | X | Y
+                    cpu = res_required['CPU']
+                    ram = res_required['RAM']
+                    storage = res_required['STORAGE']
+                    priority = res_required['PRIORITY']
+                    x = self.nodeResources[gw_id]['x']
+                    y = self.nodeResources[gw_id]['y']
+                    # add mapping id to (app id, module id)
+
     def firstPlacement(self):
         servicesInFog = 0
         servicesInCloud = 0
@@ -533,4 +573,5 @@ sg = ExperimentSetup(config=None)
 sg.networkGeneration()
 sg.appGeneration()
 sg.userGeneration()
-sg.firstPlacement()
+# sg.firstPlacement()
+sg.memeticPlacement()
