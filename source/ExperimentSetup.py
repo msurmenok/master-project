@@ -10,6 +10,7 @@ import random
 import numpy as np
 import csv
 import copy
+from ma import memetic_algorithm
 
 
 class ExperimentSetup:
@@ -17,7 +18,7 @@ class ExperimentSetup:
     def __init__(self, config):
         self.graphicTerminal = True
         self.verbose_log = False
-        self.resultFolder = 'conf'
+        self.resultFolder = 'data'
 
         try:
             os.stat(self.resultFolder)
@@ -36,38 +37,44 @@ class ExperimentSetup:
         self.CLOUDPR = 500  # MS
         self.CLOUD_X = 18200
         self.CLOUD_Y = 18200
+        self.cloudId = -1
 
         # NETWORK
         # self.PERCENTATGEOFGATEWAYS = 0.25
         self.NUM_GW_DEVICES = 15  # these devices will not be used for service placement, only as source of events
         self.NUM_FOG_NODES = 50
-        self.func_PROPAGATIONTIME = "random.randint(2,10)"  # MS
-        self.func_BANDWITDH = "random.randint(75000,75000)"  # BYTES / MS
+        self.func_PROPAGATIONTIME = lambda: random.randint(2, 10)  # MS
+        self.func_BANDWITDH = lambda: random.randint(75000, 75000)  # BYTES / MS
 
-        # CPU | MEM | DISK | TIME
-        self.func_NODESPEED = "random.randint(500,1000)"  # INTS / MS #random distribution for the speed of the fog devices
-        self.func_NODE_PROCESS_RESOURCES = "round(random.uniform(0.20, 1.00),2)"
-        self.func_NODE_RAM_RESOURECES = "random.randint(10,25)"  # MB RAM #random distribution for the resources of the fog devices
-        self.func_NODE_STORAGE_RESOURCES = "round(random.uniform(0.20, 1.00),2)"  # MB STORAGE
-        self.func_NODE_TIME_AVAILABILITY = "random.randint(100, 2000)"  # time availability (in seconds?)
+        # # INTS / MS #random distribution for the speed of the fog devices
+        self.func_NODESPEED = lambda: random.randint(500, 1000)
+        self.func_NODE_PROCESS_RESOURCES = lambda: round(random.uniform(0.20, 1.00), 2)
+        # MB RAM #random distribution for the resources of the fog devices
+        self.func_NODE_RAM_RESOURECES = lambda: random.randint(10, 25)
+        self.func_NODE_STORAGE_RESOURCES = lambda: round(random.uniform(0.20, 1.00), 2)  # MB STORAGE
+        self.func_NODE_TIME_AVAILABILITY = lambda: random.randint(100, 2000)  # time availability (in seconds?)
 
         # Apps and Services
         self.TOTAL_APPS_NUMBER = 10
-        # self.func_APPGENERATION = lambda: nx.gn_graph(random.randint(1,1))
-        # x = self.func_APPGENERATION()
-        self.func_APPGENERATION = "nx.gn_graph(random.randint(1,1))"  # Algorithm for the generation of the random applications
-        self.func_SERVICEINSTR = "random.randint(20000,60000)"  # INSTR --> Considering the nodespeed the values should be between 200 & 600 MS
-        self.func_SERVICEMESSAGESIZE = "random.randint(1500000,4500000)"  # BYTES --> Considering the BW the values should be between 20 & 60 MS
-        # CPU | MEM | DISK | PRIORITY
-        self.func_SERVICE_PROCESS_REQUIREMENT = "round(random.uniform(0.20, 0.50),2)"
-        self.func_SERVICE_RAM_REQUIREMENT = "random.randint(1,5)"  # MB of RAM consume by services. Considering noderesources & appgeneration it will be possible to allocate 1 app or +/- 10 services per node
-        self.func_SERVICE_STORAGE_REQUIREMENT = "round(random.uniform(0.20, 0.80),2)"
-        self.func_SERVICE_PRIORITY = "random.randint(0,1)"
+        # Algorithm for the generation of the random applications
+        self.func_APPGENERATION = lambda: nx.gn_graph(random.randint(1, 1))
+        # INSTR --> Considering the nodespeed the values should be between 200 & 600 MS
+        self.func_SERVICEINSTR = lambda: random.randint(20000, 60000)
+        # BYTES --> Considering the BW the values should be between 20 & 60 MS
+        self.func_SERVICEMESSAGESIZE = lambda: random.randint(1500000, 4500000)
+        # MB of RAM consume by services. Considering noderesources & appgeneration it will be possible to allocate
+        # 1 app or +/- 10 services per node
+        self.func_SERVICE_RAM_REQUIREMENT = lambda: random.randint(1, 5)
+        self.func_SERVICE_PROCESS_REQUIREMENT = lambda: round(random.uniform(0.10, 0.50), 2)
+        self.func_SERVICE_STORAGE_REQUIREMENT = lambda: round(random.uniform(0.10, 0.60), 2)
+        self.MAX_PRIORITY = 1
+        self.func_SERVICE_PRIORITY = lambda: random.randint(0, self.MAX_PRIORITY)
         # self.func_APPDEADLINE = "random.randint(2600,6600)"  # MS
 
         # Users and IoT devices
-        self.func_REQUESTPROB = "random.random()/4"  # App's popularity. This value define the probability of source request an application
-        self.func_USERREQRAT = "random.randint(200,1000)"  # MS
+        # App's popularity. This value define the probability of source request an application
+        self.func_REQUESTPROB = lambda: random.random() / 4
+        self.func_USERREQRAT = lambda: random.randint(200, 1000)  # MS
 
         self.myDeadlines = [487203.22, 487203.22, 487203.22, 474.51, 302.05, 831.04, 793.26, 1582.21, 2214.64,
                             374046.40, 420476.14, 2464.69, 97999.14, 2159.73, 915.16, 1659.97, 1059.97, 322898.56,
@@ -97,10 +104,10 @@ class ExperimentSetup:
 
         for i in self.G.nodes:
             # CPU | MEM | DISK | TIME
-            node_cpu = eval(self.func_NODE_PROCESS_RESOURCES)
-            node_ram = eval(self.func_NODE_RAM_RESOURECES)
-            node_storage = eval(self.func_NODE_STORAGE_RESOURCES)
-            node_time_availability = eval(self.func_NODE_TIME_AVAILABILITY)
+            node_cpu = self.func_NODE_PROCESS_RESOURCES()
+            node_ram = self.func_NODE_RAM_RESOURECES()
+            node_storage = self.func_NODE_STORAGE_RESOURCES()
+            node_time_availability = self.func_NODE_TIME_AVAILABILITY()
 
             current_node_resources = {}
             current_node_resources['CPU'] = node_cpu
@@ -113,7 +120,7 @@ class ExperimentSetup:
             # replaced single RAM value with the dictionary of multiple resource requirements
             # self.nodeResources[i] = eval(self.func_NODE_RAM_RESOURECES)
             self.nodeResources[i] = current_node_resources
-            self.nodeSpeed[i] = eval(self.func_NODESPEED)
+            self.nodeSpeed[i] = self.func_NODESPEED()
 
             myNode = {}
             myNode['id'] = i
@@ -137,7 +144,7 @@ class ExperimentSetup:
             distance = math.sqrt((node1['x'] - node2['x']) ** 2 + (node1['y'] - node2['y']) ** 2)
             pr = max(int(distance / scale), minimum_pr)
             self.G[e[0]][e[1]]['PR'] = pr
-            self.G[e[0]][e[1]]['BW'] = eval(self.func_BANDWITDH)
+            self.G[e[0]][e[1]]['BW'] = self.func_BANDWITDH()
 
         myEdges = list()
         for e in self.G.edges:
@@ -254,7 +261,7 @@ class ExperimentSetup:
 
         for i in range(0, self.TOTAL_APPS_NUMBER):
             myApp = {}
-            APP = eval(self.func_APPGENERATION)
+            APP = self.func_APPGENERATION()
 
             mylabels = {}
 
@@ -287,10 +294,10 @@ class ExperimentSetup:
             self.apps.append(APP)
             for j in APP.nodes:
                 my_resource_requirements = {}
-                my_resource_requirements['CPU'] = eval(self.func_SERVICE_PROCESS_REQUIREMENT)
-                my_resource_requirements['RAM'] = eval(self.func_SERVICE_RAM_REQUIREMENT)
-                my_resource_requirements['STORAGE'] = eval(self.func_SERVICE_STORAGE_REQUIREMENT)
-                my_resource_requirements['PRIORITY'] = eval(self.func_SERVICE_PRIORITY)
+                my_resource_requirements['CPU'] = self.func_SERVICE_PROCESS_REQUIREMENT()
+                my_resource_requirements['RAM'] = self.func_SERVICE_RAM_REQUIREMENT()
+                my_resource_requirements['STORAGE'] = self.func_SERVICE_STORAGE_REQUIREMENT()
+                my_resource_requirements['PRIORITY'] = self.func_SERVICE_PRIORITY()
                 self.servicesResources[j] = my_resource_requirements
 
             self.appsResources.append(self.servicesResources)
@@ -333,9 +340,9 @@ class ExperimentSetup:
                     myEdge['name'] = "M.USER.APP." + str(i)
                     myEdge['s'] = "None"
                     myEdge['d'] = str(i) + '_' + str(n)
-                    myEdge['instructions'] = eval(self.func_SERVICEINSTR)
+                    myEdge['instructions'] = self.func_SERVICEINSTR()
                     totalMIPS = totalMIPS + myEdge['instructions']
-                    myEdge['bytes'] = eval(self.func_SERVICEMESSAGESIZE)
+                    myEdge['bytes'] = self.func_SERVICEMESSAGESIZE()
                     myApp['message'].append(myEdge)
                     self.appsSourceMessage.append(myEdge)
 
@@ -362,9 +369,9 @@ class ExperimentSetup:
                 myEdge['name'] = str(i) + '_(' + str(n[0]) + "-" + str(n[1]) + ")"
                 myEdge['s'] = str(i) + '_' + str(n[0])
                 myEdge['d'] = str(i) + '_' + str(n[1])
-                myEdge['instructions'] = eval(self.func_SERVICEINSTR)
+                myEdge['instructions'] = self.func_SERVICEINSTR()
                 totalMIPS = totalMIPS + myEdge['instructions']
-                myEdge['bytes'] = eval(self.func_SERVICEMESSAGESIZE)
+                myEdge['bytes'] = self.func_SERVICEMESSAGESIZE()
                 myApp['message'].append(myEdge)
                 destNode = n[1]
                 for o in APP.edges:
@@ -407,7 +414,7 @@ class ExperimentSetup:
         self.appsRequests = list()
         for i in range(0, self.TOTAL_APPS_NUMBER):
             userRequestList = set()
-            probOfRequested = eval(self.func_REQUESTPROB)
+            probOfRequested = self.func_REQUESTPROB()
             # probOfRequested = -1
             atLeastOneAllocated = False
             for j in self.gatewaysDevices:
@@ -417,7 +424,7 @@ class ExperimentSetup:
                     myOneUser['app'] = str(i)
                     myOneUser['message'] = "M.USER.APP." + str(i)
                     myOneUser['id_resource'] = j
-                    myOneUser['lambda'] = eval(self.func_USERREQRAT)
+                    myOneUser['lambda'] = self.func_USERREQRAT()
                     userRequestList.add(j)
                     self.myUsers.append(myOneUser)
                     atLeastOneAllocated = True
@@ -427,7 +434,7 @@ class ExperimentSetup:
                 myOneUser['app'] = str(i)
                 myOneUser['message'] = "M.USER.APP." + str(i)
                 myOneUser['id_resource'] = list(self.gatewaysDevices)[j]  # Random GW to host the request
-                myOneUser['lambda'] = eval(self.func_USERREQRAT)
+                myOneUser['lambda'] = self.func_USERREQRAT()
                 userRequestList.add(list(self.gatewaysDevices)[j])
                 self.myUsers.append(myOneUser)
             self.appsRequests.append(userRequestList)
@@ -439,10 +446,6 @@ class ExperimentSetup:
         userFile.close()
 
     def memeticPlacement(self):
-        servicesInFog = 0
-        servicesInCloud = 0
-        allAlloc = {}
-        myAllocationList = list()
         index_to_fogid = {}
         index_to_module_app = {}
 
@@ -454,7 +457,7 @@ class ExperimentSetup:
         index = 0
 
         for k, v in self.nodeResources.items():
-            if k not in self.gatewaysDevices:
+            if k not in self.gatewaysDevices and k is not self.cloudId:
                 index_to_fogid[index] = k
                 index += 1
                 # Build numpy array: CPU | MEM | DISK | TIME
@@ -484,7 +487,38 @@ class ExperimentSetup:
                     y = self.nodeResources[gw_id]['y']
                     services_requirements.append(np.array([cpu, ram, storage, priority, x, y]))
         services_requirements = np.stack(services_requirements)
-        x = 4
+
+        num_creatures = self.TOTAL_APPS_NUMBER * 2
+        num_generations = 100
+        max_priority = 1
+        placement = memetic_algorithm(num_creatures, num_generations, services_requirements, hosts_resources,
+                                      max_priority)
+        print("memetic placement: ", placement)
+
+        # convert placement indexes to devices id and save initial placement as json
+        servicesInFog = 0
+        servicesInCloud = 0
+        allAlloc = {}
+        myAllocationList = list()
+
+        for i in range(placement.size):
+            app_id, module = index_to_module_app[i]
+            resource_id = self.cloudId  # default value if placement is nan
+            if np.isnan(placement[i]):
+                servicesInCloud += 1
+            else:
+                resource_id = index_to_fogid[int(placement[i])]
+                servicesInFog += 1
+            myAllocation = {}
+            myAllocation['app'] = self.mapService2App[module]
+            myAllocation['module_name'] = self.mapServiceId2ServiceName[module]
+            myAllocation['id_resource'] = resource_id
+            myAllocationList.append(myAllocation)
+
+        allAlloc['initialAllocation'] = myAllocationList
+        allocationFile = open(self.resultFolder + "/allocDefinitionMemetic.json", "w")
+        allocationFile.write(json.dumps(allAlloc))
+        allocationFile.close()
 
     def firstPlacement(self):
         servicesInFog = 0
@@ -580,5 +614,5 @@ sg = ExperimentSetup(config=None)
 sg.networkGeneration()
 sg.appGeneration()
 sg.userGeneration()
-# sg.firstPlacement()
+sg.firstPlacement()
 sg.memeticPlacement()

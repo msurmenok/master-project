@@ -24,33 +24,32 @@ from jsonPopulation import JSONPopulation
 
 
 def main(stop_time, it):
-    folder_results = Path("results/")
-    folder_results.mkdir(parents=True, exist_ok=True)
+    folder_results = "results/"
 
     # Create topology from json
     topo = Topology()
-    topology_json = json.load(open(os.path.dirname(__file__) + "/conf/netDefinition.json"))
+    topology_json = json.load(open(os.path.dirname(__file__) + "/data/netDefinition.json"))
     # topo.load(topology_json)
     topo.load_all_node_attr(topology_json)
     # topo.write("data_net.gexf")
 
     # create applications
-    data_app = json.load(open(os.path.dirname(__file__) + "/conf/appDefinition.json"))
+    data_app = json.load(open(os.path.dirname(__file__) + "/data/appDefinition.json"))
     apps = create_applications_from_json(data_app)
 
     # load placement algorithm
-    placementJson = json.load(open(os.path.dirname(__file__) + "/conf/allocDefinitionFirst.json"))
+    placementJson = json.load(open(os.path.dirname(__file__) + "/data/allocDefinitionFirst.json"))
     placement = JSONPlacement(name="Placement", json=placementJson)
 
     # load population
-    dataPopulation = json.load(open(os.path.dirname(__file__) + "/conf/usersDefinition.json"))
+    dataPopulation = json.load(open(os.path.dirname(__file__) + "/data/usersDefinition.json"))
     pop = JSONPopulation(name="Statical", json=dataPopulation, iteration=it)
 
     # Routing algorithm
     # selectorPath = MinimunPath()
     selectorPath = DeviceSpeedAwareRouting()
 
-    s = Sim(topo, default_results_path="Results_%s_%s_%i_%i" % ("FirstFit", "small", stop_time, it))
+    s = Sim(topo, default_results_path=folder_results + "Results_%s_%s_%i_%i" % ("FirstFit", "small", stop_time, it))
 
     for aName in apps.keys():
         print("Deploying app: ", aName)
