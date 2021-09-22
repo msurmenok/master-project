@@ -446,15 +446,18 @@ class ExperimentSetup:
         index_to_fogid = {}
         index_to_module_app = {}
 
+        hosts_resources = list()  # numpy array to store host resources and coordinates
+        services_requirements = list()  # numpy array to store service requirements, priority, and coordinates
+
         # make a numpy array of fog resources excluding gateway devices
         # map index to fog device id
         index = 0
-        hosts_resources = list()
+
         for k, v in self.nodeResources.items():
             if k not in self.gatewaysDevices:
                 index_to_fogid[index] = k
                 index += 1
-                # CPU | MEM | DISK | TIME
+                # Build numpy array: CPU | MEM | DISK | TIME
                 cpu = v['CPU']
                 ram = v['RAM']
                 storage = v['STORAGE']
@@ -464,20 +467,24 @@ class ExperimentSetup:
                 hosts_resources.append(np.array([cpu, ram, storage, time_availability, x, y]))
         hosts_resources = np.stack(hosts_resources)
 
-        services_requirements = list()
+        index = 0
         for app_num, app in enumerate(self.appsRequests):
             for instance, gw_id in enumerate(self.appsRequests[app_num]):
-                for index, module in enumerate(list(self.apps[app_num].nodes)):
+                for module in list(self.apps[app_num].nodes):
+                    # add mapping id to (app id, module id)
+                    index_to_module_app[index] = (app_num, module)
+                    index += 1
+                    # Build numpy array: CPU | RAM | STORAGE | PRIORITY | X | Y
                     res_required = self.servicesResources[module]
-                    y = 0
-                    # CPU | RAM | STORAGE | PRIORITY | X | Y
                     cpu = res_required['CPU']
                     ram = res_required['RAM']
                     storage = res_required['STORAGE']
                     priority = res_required['PRIORITY']
                     x = self.nodeResources[gw_id]['x']
                     y = self.nodeResources[gw_id]['y']
-                    # add mapping id to (app id, module id)
+                    services_requirements.append(np.array([cpu, ram, storage, priority, x, y]))
+        services_requirements = np.stack(services_requirements)
+        x = 4
 
     def firstPlacement(self):
         servicesInFog = 0
