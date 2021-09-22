@@ -445,8 +445,7 @@ class ExperimentSetup:
         allAlloc = {}
         myAllocationList = list()
         # random.seed(datetime.now())
-        initial_nodeResources = sorted(self.nodeResources.items(), key=operator.itemgetter(0))
-        aux = sorted(self.nodeResources.items(), key=operator.itemgetter(1))
+        aux = sorted(self.nodeResources.items(), key=lambda x: x[1]['RAM'])
         # aux = sorted(self.nodeResources.items(), key=operator.itemgetter(0))
         sorted_nodeResources = [list(sub_list) for sub_list in aux]
 
@@ -459,10 +458,18 @@ class ExperimentSetup:
                         # Chosing the node with less resources to host the service
                         index = iterations
                         iterations += 1
+                        if sorted_nodeResources[index][0] in self.gatewaysDevices:
+                            continue
                         # Checking if the node has resource to host the service
                         res_required = self.servicesResources[module]
-                        if res_required <= sorted_nodeResources[index][1]:
-                            remaining_resources = sorted_nodeResources[index][1] - res_required
+                        if res_required['CPU'] <= sorted_nodeResources[index][1]['CPU'] and res_required['STORAGE'] <= \
+                                sorted_nodeResources[index][1]['STORAGE'] and res_required['RAM'] <= \
+                                sorted_nodeResources[index][1]['RAM']:
+                            remaining_resources = sorted_nodeResources[index][1]
+                            remaining_resources['CPU'] -= res_required['CPU']
+                            remaining_resources['STORAGE'] -= res_required['STORAGE']
+                            remaining_resources['RAM'] -= res_required['RAM']
+
                             # Updating sorted resource list
                             sorted_nodeResources[index][1] = remaining_resources
                             # Updating nodeFreeResources
@@ -526,4 +533,4 @@ sg = ExperimentSetup(config=None)
 sg.networkGeneration()
 sg.appGeneration()
 sg.userGeneration()
-# sg.firstPlacement()
+sg.firstPlacement()
