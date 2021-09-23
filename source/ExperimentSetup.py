@@ -490,7 +490,7 @@ class ExperimentSetup:
 
         # calling Memetic algorithm
         num_creatures = 50
-        num_generations = 10
+        num_generations = 100
         max_priority = 1
         placement = memetic_algorithm(num_creatures, num_generations, services_requirements, hosts_resources,
                                       max_priority, self.DISTANCE_TO_CLOUD)

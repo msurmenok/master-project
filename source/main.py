@@ -72,18 +72,18 @@ def initialize_experiment():
     sg.userGeneration()
 
     # First Fit
-    start_time = time.time()  # measure time to complete
+    start_time = time.time()  # measure time for placement
     sg.firstFitPlacement()
-
     finish_time = time.time() - start_time
+
     file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
     file.write('%s, FirstFit, %s\n' % ("small", str(finish_time)))
 
     # Memetic Algorithm
     start_time = time.time()  # measure time to complete
     sg.memeticPlacement()
-
     finish_time = time.time() - start_time
+
     file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
     file.write('%s, Memetic, %s\n' % ("small", str(finish_time)))
 
@@ -95,7 +95,7 @@ if __name__ == '__main__':
 
     # logging.config.fileConfig(os.getcwd() + '/logging.ini')
 
-    nIterations = 3  # iteration for each experiment
+    nIterations = 10  # iteration for each experiment
     simulationDuration = 10000
 
     algorithms = ['FirstFit', 'Memetic']
@@ -107,9 +107,9 @@ if __name__ == '__main__':
             random.seed(iteration)
             logging.info("Running experiment it: - %i" % iteration)
 
-            start_time = time.time()
+            s_time = time.time()
             main(stop_time=simulationDuration, it=iteration, algorithm=algorithm)
             print("%s algorithm, %d iteration is done" % (algorithm, iteration))
-            print("\n--- %s seconds ---" % (time.time() - start_time))
+            print("\n--- %s seconds ---" % (time.time() - s_time))
 
     print("Simulation Done!")
