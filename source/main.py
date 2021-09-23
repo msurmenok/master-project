@@ -8,6 +8,7 @@ import time
 import json
 import random
 import logging.config
+from ExperimentSetup import ExperimentSetup
 
 import networkx as nx
 from pathlib import Path
@@ -22,10 +23,10 @@ from yafs.path_routing import DeviceSpeedAwareRouting
 from yafs.distribution import deterministic_distribution
 from jsonPopulation import JSONPopulation
 
+folder_results = "results/"
 
-def main(stop_time, it):
-    folder_results = "results/"
 
+def main(stop_time, it, algorithm):
     # Create topology from json
     topo = Topology()
     topology_json = json.load(open(os.path.dirname(__file__) + "/data/netDefinition.json"))
@@ -38,7 +39,7 @@ def main(stop_time, it):
     apps = create_applications_from_json(data_app)
 
     # load placement algorithm
-    placementJson = json.load(open(os.path.dirname(__file__) + "/data/allocDefinitionFirst.json"))
+    placementJson = json.load(open(os.path.dirname(__file__) + "/data/allocDefinition" + algorithm + ".json"))
     placement = JSONPlacement(name="Placement", json=placementJson)
 
     # load population
@@ -49,7 +50,7 @@ def main(stop_time, it):
     # selectorPath = MinimunPath()
     selectorPath = DeviceSpeedAwareRouting()
 
-    s = Sim(topo, default_results_path=folder_results + "Results_%s_%s_%i_%i" % ("FirstFit", "small", stop_time, it))
+    s = Sim(topo, default_results_path=folder_results + "Results_%s_%s_%i_%i" % (algorithm, "small", stop_time, it))
 
     for aName in apps.keys():
         print("Deploying app: ", aName)
@@ -64,22 +65,51 @@ def main(stop_time, it):
     s.run(stop_time, show_progress_monitor=False)
 
 
+def initialize_experiment():
+    sg = ExperimentSetup(config=None)
+    sg.networkGeneration()
+    sg.appGeneration()
+    sg.userGeneration()
+
+    # First Fit
+    start_time = time.time()  # measure time to complete
+    sg.firstFitPlacement()
+
+    finish_time = time.time() - start_time
+    file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
+    file.write('%s, FirstFit, %s\n' % ("small", str(finish_time)))
+
+    # Memetic Algorithm
+    start_time = time.time()  # measure time to complete
+    sg.memeticPlacement()
+
+    finish_time = time.time() - start_time
+    file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
+    file.write('%s, Memetic, %s\n' % ("small", str(finish_time)))
+
+
+    file.close()
+
+
 if __name__ == '__main__':
 
     # logging.config.fileConfig(os.getcwd() + '/logging.ini')
 
-    nIterations = 1  # iteration for each experiment
+    nIterations = 3  # iteration for each experiment
     simulationDuration = 10000
+
+    algorithms = ['FirstFit', 'Memetic']
 
     # Iteration for each experiment changing the seed of randoms
     for iteration in range(nIterations):
-        random.seed(iteration)
-        logging.info("Running experiment it: - %i" % iteration)
+        initialize_experiment()
+        for algorithm in algorithms:
+            random.seed(iteration)
+            logging.info("Running experiment it: - %i" % iteration)
 
-        start_time = time.time()
-        main(stop_time=simulationDuration,
-             it=iteration)
-
-        print("\n--- %s seconds ---" % (time.time() - start_time))
+            start_time = time.time()
+            main(stop_time=simulationDuration, it=iteration, algorithm=algorithm)
+            print("%s algorithm, %d iteration is done" % (algorithm, iteration))
+            print("\n--- %s seconds ---" % (time.time() - start_time))
 
     print("Simulation Done!")

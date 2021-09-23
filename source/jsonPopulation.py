@@ -21,8 +21,7 @@ class JSONPopulation(Population):
                 lambd = item["lambda"]
                 app = sim.apps[app_name]
                 msg = app.get_message(item["message"])
-                # dDistribution = exponentialDistribution(name="Exp", lambd=lambd, seed=self.it)
                 random.seed(datetime.now())
-                dDistribution = exponential_distribution(name="Exp", lambd=random.randint(200, 1000), seed=self.it)
+                dDistribution = exponential_distribution(name="Exp", lambd=lambd, seed=self.it)
                 idsrc = sim.deploy_source(app_name, id_node=idtopo, msg=msg, distribution=dDistribution)
                 random.randint(200, 1000)

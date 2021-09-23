@@ -85,7 +85,7 @@ def repair(services, individual, hosts_utilization, MAX_PRIORITY):
     return (individual, np.copy(hosts_utilization))
 
 
-def fitness(individual, services, hosts):
+def fitness(individual, services, hosts, user_to_host_distance, distance_to_cloud):
     # MAX, F1 - Number of Pushed Services Maximization
     f1 = 0
     for i in range(len(individual)):
@@ -111,18 +111,23 @@ def fitness(individual, services, hosts):
     # sum of all hosts time availability that hosts at least one service
     time_index = 3  # index 3 in host describes how long it is available
     active_hosts_indexes = np.unique(individual)
-    active_hosts_indexes = [x for x in active_hosts_indexes if not np.isnan(x) == True]
+    active_hosts_indexes = [x for x in active_hosts_indexes if not np.isnan(x)]
     f3 = 0
     for host_index in active_hosts_indexes:
         f3 += hosts[int(host_index)][time_index]
 
-    # TODO: replace comparing distances (x,y) between user and host
     # MIN, F4
     # Host Distance Minimization
     location_index = 4  # index 4 in host describes the location of the host
     f4 = 0
-    for host_index in active_hosts_indexes:
-        f4 += hosts[int(host_index)][location_index]
+    # for host_index in active_hosts_indexes:
+    #     f4 += hosts[int(host_index)][location_index]
+
+    for i in range(len(individual)):
+        if not np.isnan(individual[i]):
+            f4 += user_to_host_distance[i][int(individual[i])]
+        else:
+            f4 += distance_to_cloud
 
     # MIN, F5
     # Active Hosts Minimization
@@ -383,11 +388,22 @@ def population_evolution(P, Q, objectives_functions_P, objectives_functions_Q, f
     return P
 
 
-def memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY):
+def memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY, distance_to_cloud):
     num_services = len(services)
     num_hosts = len(hosts)
     num_objective_functions = 5
     SELECTION_PERCENT = 0.5
+
+    # calculate distance between each user (who requested service) and host using x, y coordinates
+    # row (outer index) = service id, column (inner index) = host id
+    user_to_host_distance = np.zeros((num_services, num_hosts))
+
+    for i in range(num_services):
+        user_coordinates = np.array((services[i][4], services[i][5]))  # 4 is index for x, 5 is index for y
+        for j in range(num_hosts):
+            host_coordinates = np.array((hosts[j][4], hosts[j][5]))
+            distance = np.linalg.norm(user_coordinates - host_coordinates)
+            user_to_host_distance[i][j] = distance
 
     population_shape = (num_creatures, num_services)
     # try experiment:
@@ -422,7 +438,7 @@ def memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIOR
     # calculate the cost of each objective function for each solution
     objectives_functions_P = np.zeros((num_creatures, num_objective_functions))
     for i in range(num_creatures):
-        fitness_score = fitness(P[i], services, hosts)
+        fitness_score = fitness(P[i], services, hosts, user_to_host_distance, distance_to_cloud)
         objectives_functions_P[i] = fitness_score
 
     # calculate the non-dominated fronts
@@ -474,7 +490,7 @@ def memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIOR
         #     print("Q hosts", hosts)
         # calculate the cost of each objective function for each solution
         for i in range(num_creatures):
-            fitness_score = fitness(Q[i], services, hosts)
+            fitness_score = fitness(Q[i], services, hosts, user_to_host_distance, distance_to_cloud)
             objectives_functions_Q[i] = fitness_score
         # calculate the non-dominated fronts
         fronts_Q = non_dominated_sorting(objectives_functions_Q, num_creatures)
@@ -495,7 +511,7 @@ def memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIOR
     # report the best
     objectives_functions_P = np.zeros((num_creatures, num_objective_functions))
     for i in range(num_creatures):
-        fitness_score = fitness(P[i], services, hosts)
+        fitness_score = fitness(P[i], services, hosts, user_to_host_distance, distance_to_cloud)
         objectives_functions_P[i] = fitness_score
 
     fronts_best_P = non_dominated_sorting(objectives_functions_P, num_creatures)

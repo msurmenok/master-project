@@ -37,21 +37,21 @@ class ExperimentSetup:
         self.CLOUDPR = 500  # MS
         self.CLOUD_X = 18200
         self.CLOUD_Y = 18200
+        self.DISTANCE_TO_CLOUD = 25500
         self.cloudId = -1
 
         # NETWORK
         # self.PERCENTATGEOFGATEWAYS = 0.25
-        self.NUM_GW_DEVICES = 15  # these devices will not be used for service placement, only as source of events
+        self.NUM_GW_DEVICES = 10  # these devices will not be used for service placement, only as source of events
         self.NUM_FOG_NODES = 50
-        self.func_PROPAGATIONTIME = lambda: random.randint(2, 10)  # MS
         self.func_BANDWITDH = lambda: random.randint(75000, 75000)  # BYTES / MS
 
         # # INTS / MS #random distribution for the speed of the fog devices
         self.func_NODESPEED = lambda: random.randint(500, 1000)
-        self.func_NODE_PROCESS_RESOURCES = lambda: round(random.uniform(0.20, 1.00), 2)
+        self.func_NODE_PROCESS_RESOURCES = lambda: round(random.uniform(0.20, 2.00), 2)
         # MB RAM #random distribution for the resources of the fog devices
         self.func_NODE_RAM_RESOURECES = lambda: random.randint(10, 25)
-        self.func_NODE_STORAGE_RESOURCES = lambda: round(random.uniform(0.20, 1.00), 2)  # MB STORAGE
+        self.func_NODE_STORAGE_RESOURCES = lambda: random.randint(20, 200)  # MB STORAGE
         self.func_NODE_TIME_AVAILABILITY = lambda: random.randint(100, 2000)  # time availability (in seconds?)
 
         # Apps and Services
@@ -65,8 +65,8 @@ class ExperimentSetup:
         # MB of RAM consume by services. Considering noderesources & appgeneration it will be possible to allocate
         # 1 app or +/- 10 services per node
         self.func_SERVICE_RAM_REQUIREMENT = lambda: random.randint(1, 5)
-        self.func_SERVICE_PROCESS_REQUIREMENT = lambda: round(random.uniform(0.10, 0.50), 2)
-        self.func_SERVICE_STORAGE_REQUIREMENT = lambda: round(random.uniform(0.10, 0.60), 2)
+        self.func_SERVICE_PROCESS_REQUIREMENT = lambda: round(random.uniform(0.10, 0.60), 2)
+        self.func_SERVICE_STORAGE_REQUIREMENT = lambda: random.randint(10, 60)
         self.MAX_PRIORITY = 1
         self.func_SERVICE_PRIORITY = lambda: random.randint(0, self.MAX_PRIORITY)
         # self.func_APPDEADLINE = "random.randint(2600,6600)"  # MS
@@ -488,11 +488,12 @@ class ExperimentSetup:
                     services_requirements.append(np.array([cpu, ram, storage, priority, x, y]))
         services_requirements = np.stack(services_requirements)
 
-        num_creatures = self.TOTAL_APPS_NUMBER * 2
-        num_generations = 100
+        # calling Memetic algorithm
+        num_creatures = 50
+        num_generations = 10
         max_priority = 1
         placement = memetic_algorithm(num_creatures, num_generations, services_requirements, hosts_resources,
-                                      max_priority)
+                                      max_priority, self.DISTANCE_TO_CLOUD)
         print("memetic placement: ", placement)
 
         # convert placement indexes to devices id and save initial placement as json
@@ -520,7 +521,7 @@ class ExperimentSetup:
         allocationFile.write(json.dumps(allAlloc))
         allocationFile.close()
 
-    def firstPlacement(self):
+    def firstFitPlacement(self):
         servicesInFog = 0
         servicesInCloud = 0
         allAlloc = {}
@@ -566,12 +567,12 @@ class ExperimentSetup:
                             else:
                                 servicesInCloud += 1
                     if iterations == (len(sorted_nodeResources) - 1):
-                        print("After %i iterations it was not possible to place the module %i using the FirstPlacement" \
+                        print("After %i iterations it was not possible to place the module %i using the FirstFitPlacement" \
                               % iterations, module)
                         exit()
         allAlloc['initialAllocation'] = myAllocationList
 
-        allocationFile = open(self.resultFolder + "/allocDefinitionFirst.json", "w")
+        allocationFile = open(self.resultFolder + "/allocDefinitionFirstFit.json", "w")
         allocationFile.write(json.dumps(allAlloc))
         allocationFile.close()
 
@@ -607,12 +608,12 @@ class ExperimentSetup:
         #     file.write("\n")
         #     file.close()
 
-        print("First initial allocation performed!")
+        print("FirstFit initial allocation performed!")
 
 
 sg = ExperimentSetup(config=None)
 sg.networkGeneration()
 sg.appGeneration()
 sg.userGeneration()
-sg.firstPlacement()
+sg.firstFitPlacement()
 sg.memeticPlacement()
