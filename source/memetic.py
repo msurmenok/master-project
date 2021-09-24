@@ -1,5 +1,8 @@
 import numpy as np
 
+"""
+Memetic algorithm below is based on C code from https://github.com/flopezpires/iMaVMP
+"""
 
 def initialize(num_creatures, num_services, num_hosts):
     # For each service randomly generate index of host where this service should be placed
@@ -28,19 +31,14 @@ def check_feasibility_and_repair(services, individual, individual_hosts, MAX_PRI
                 hosts_utilization[current_host_index][1] - services[i][1] < 0 or \
                 hosts_utilization[current_host_index][2] - services[i][2] < 0:
             feasible = False
-            #  print("not feasible", current_host_index)
             # if current service cannot be placed on this machine, set this service host index to Nan
             individual[i] = None
         else:
             hosts_utilization[current_host_index] = hosts_utilization[current_host_index] - services[i][:3]
     # if not feasible send the individual to repair
     if not feasible:
-        #         print("Not feasible")
-        #         print("if nan, service need to be reassigned: ", individual)
-        #         print("FIXING IN PROGRESS:")
         return repair(services, individual, hosts_utilization, MAX_PRIORITY)
     else:
-        #         print("Feasible!", individual)
         return individual, np.copy(hosts_utilization)
 
 
@@ -60,7 +58,6 @@ def repair(services, individual, hosts_utilization, MAX_PRIORITY):
         # try to move service to an available host
         if np.isnan(individual[i]):
             fixed = False  # flag to indicate if the service was sucessfully placed when iterating over all hosts
-            #             print("IS NAN ", i)
             # try to place the service on one of the available hosts
             # start with the random host
             candidate = np.random.randint(low=0, high=len(hosts_utilization))
@@ -101,7 +98,6 @@ def fitness(individual, services, hosts, user_to_host_distance, distance_to_clou
     priority_index = 3  # the last index (3) in services describes its priority
     for i in range(len(individual)):
         p_i = services[i][priority_index]
-        #         print("priority P(i) = ", p_i)
         if not np.isnan(individual[i]):
             # if the service host index is not Nan, then this service was placed sucessfully
             f2 += c_pi * p_i
@@ -406,14 +402,10 @@ def memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIOR
             user_to_host_distance[i][j] = distance
 
     population_shape = (num_creatures, num_services)
-    # try experiment:
-    # 100x40 and 50x20 input sizes are considered, where AxB means A containers to B hosts.
-    print(population_shape)
 
     P = initialize(num_creatures, num_services, num_hosts)
 
     # repair
-    # FIXES: initializaed repaired_population, passed P instead of population to function check_feasibility_and_repair
     repaired_population = np.zeros((num_creatures, num_services))
     hosts_utilization_for_each_creature = np.zeros(
         (num_creatures, num_hosts, 3))  # 3 because we have 3 kinds of resources
@@ -422,18 +414,10 @@ def memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIOR
         repaired_population[i] = result[0]
         hosts_utilization_for_each_creature[i] = result[1]
 
-    # print("utilization from load_utilization function", load_utilization(repaired_population, hosts, services, num_creatures, num_hosts, num_services))
-
     # apply local search to solutions
-    # FIXES use repaired_population instead of P
     P, hosts_utilization_for_each_creature = local_search(repaired_population, hosts_utilization_for_each_creature,
                                                           hosts,
                                                           services, num_creatures, num_hosts, num_services)
-
-    # print P and hosts_utilization to verify the result
-    # print("population after local search", P)
-    # print("hosts_utilization", hosts_utilization_for_each_creature)
-    # print("utilization from load_utilization function", load_utilization(P, hosts, services, num_creatures, num_hosts, num_services))
 
     # calculate the cost of each objective function for each solution
     objectives_functions_P = np.zeros((num_creatures, num_objective_functions))
@@ -444,15 +428,11 @@ def memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIOR
     # calculate the non-dominated fronts
     fronts_P = non_dominated_sorting(objectives_functions_P, num_creatures)
 
-    print("fronts", fronts_P)
     # Update set of nondominated solutions
     pareto_head = []
     for i in range(num_creatures):
         if fronts_P[i] == 1:
             pareto_head = pareto_insert(pareto_head, P[i], objectives_functions_P[i])
-
-    print("P", P)
-    print("pareto head", pareto_head)
 
     # identificators for the crossover parents
     father = []
@@ -469,8 +449,6 @@ def memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIOR
         Q = initialize(num_creatures, num_services, num_hosts)
         father = selection(fronts_P, num_creatures, SELECTION_PERCENT)
         mother = selection(fronts_P, num_creatures, SELECTION_PERCENT)
-        #     print("hi father!",father)
-        #     print("hi mother!",mother)
 
         # crossover and mutation of solutions
         Q = crossover(Q, father, mother, num_services)
@@ -485,9 +463,7 @@ def memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIOR
             utilization_Q[i] = result[1]
 
         Q, utilization_Q = local_search(Q, utilization_Q, hosts, services, num_creatures, num_hosts, num_services)
-        print("Q", Q)
-        #     print("Q utilization", utilization_Q)
-        #     print("Q hosts", hosts)
+
         # calculate the cost of each objective function for each solution
         for i in range(num_creatures):
             fitness_score = fitness(Q[i], services, hosts, user_to_host_distance, distance_to_cloud)
@@ -499,14 +475,10 @@ def memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIOR
             if fronts_Q[i] == 1:
                 pareto_head = pareto_insert(pareto_head, Q[i], objectives_functions_Q[i])
         #     Pt = fitness selection from Pt ∪ Qt
-        print("P before evolution", P)
-        print("fronts P before evolution", fronts_P)
         P = population_evolution(P, Q, objectives_functions_P, objectives_functions_Q, fronts_P, num_creatures,
                                  num_services);
-    print("final P", P)
-    # print("final hosts", hosts)
-    # print("final services", services)
-    print("final utilization", load_utilization(P, hosts, services, num_creatures, num_hosts, num_services))
+    # print("final P", P)
+    # print("final utilization", load_utilization(P, hosts, services, num_creatures, num_hosts, num_services))
 
     # report the best
     objectives_functions_P = np.zeros((num_creatures, num_objective_functions))
@@ -516,7 +488,7 @@ def memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIOR
 
     fronts_best_P = non_dominated_sorting(objectives_functions_P, num_creatures)
 
-    # MA sorting doesn't work well, temporal solution sort by best fitness value:
+    # sort by best fitness value:
     cost_solution = []
     for i in range(num_creatures):
         # only the first pareto front
@@ -528,10 +500,9 @@ def memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIOR
 
     cost_solution = sorted(cost_solution, key=lambda x: x[1], reverse=True)
     # print(cost_solution[0][0])
-    print("all", cost_solution)
-    print("best", cost_solution[0])
+    # print("all", cost_solution)
+    # print("best", cost_solution[0])
     return cost_solution[0][0]
-
 
 def test_memetic():
     # test memetic

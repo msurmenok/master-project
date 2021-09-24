@@ -26,7 +26,7 @@ from jsonPopulation import JSONPopulation
 folder_results = "results/"
 
 
-def main(stop_time, it, algorithm):
+def main(stop_time, it, algorithm, config):
     # Create topology from json
     topo = Topology()
     topology_json = json.load(open(os.path.dirname(__file__) + "/data/netDefinition.json"))
@@ -50,7 +50,7 @@ def main(stop_time, it, algorithm):
     # selectorPath = MinimunPath()
     selectorPath = DeviceSpeedAwareRouting()
 
-    s = Sim(topo, default_results_path=folder_results + "Results_%s_%s_%i_%i" % (algorithm, "small", stop_time, it))
+    s = Sim(topo, default_results_path=folder_results + "Results_%s_%s_%i_%i" % (algorithm, config['scenario'], stop_time, it))
 
     for aName in apps.keys():
         print("Deploying app: ", aName)
@@ -65,8 +65,8 @@ def main(stop_time, it, algorithm):
     s.run(stop_time, show_progress_monitor=False)
 
 
-def initialize_experiment():
-    sg = ExperimentSetup(config=None)
+def initialize_experiment(configuration):
+    sg = ExperimentSetup(config=configuration)
     sg.networkGeneration()
     sg.appGeneration()
     sg.userGeneration()
@@ -77,7 +77,7 @@ def initialize_experiment():
     finish_time = time.time() - start_time
 
     file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
-    file.write('%s, FirstFit, %s\n' % ("small", str(finish_time)))
+    file.write('%s, FirstFit, %s\n' % (config['scenario'], str(finish_time)))
 
     # Memetic Algorithm
     start_time = time.time()  # measure time to complete
@@ -85,8 +85,7 @@ def initialize_experiment():
     finish_time = time.time() - start_time
 
     file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
-    file.write('%s, Memetic, %s\n' % ("small", str(finish_time)))
-
+    file.write('%s, Memetic, %s\n' % (config['scenario'], str(finish_time)))
 
     file.close()
 
@@ -95,21 +94,29 @@ if __name__ == '__main__':
 
     # logging.config.fileConfig(os.getcwd() + '/logging.ini')
 
-    nIterations = 10  # iteration for each experiment
+    nIterations = 3  # iteration for each experiment
     simulationDuration = 10000
 
     algorithms = ['FirstFit', 'Memetic']
+    configs = [
+        {'scenario': 'tiny'},
+        {'scenario': 'small'},
+        {'scenario': 'medium'},
+        {'scenario': 'large'}
+    ]
 
     # Iteration for each experiment changing the seed of randoms
-    for iteration in range(nIterations):
-        initialize_experiment()
-        for algorithm in algorithms:
-            random.seed(iteration)
-            logging.info("Running experiment it: - %i" % iteration)
+    for config in configs:
+        for iteration in range(nIterations):
+            initialize_experiment(config)
 
-            s_time = time.time()
-            main(stop_time=simulationDuration, it=iteration, algorithm=algorithm)
-            print("%s algorithm, %d iteration is done" % (algorithm, iteration))
-            print("\n--- %s seconds ---" % (time.time() - s_time))
+            for algorithm in algorithms:
+                random.seed(iteration)
+                logging.info("Running experiment type: %s iteration: %i" % (config['scenario'], iteration))
+
+                s_time = time.time()
+                main(stop_time=simulationDuration, it=iteration, algorithm=algorithm, config=config)
+                print("%s algorithm, %d iteration is done" % (algorithm, iteration))
+                print("\n--- %s seconds ---" % (time.time() - s_time))
 
     print("Simulation Done!")

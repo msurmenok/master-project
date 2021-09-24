@@ -10,13 +10,13 @@ import random
 import numpy as np
 import csv
 import copy
-from ma import memetic_algorithm
+from memetic import memetic_algorithm
 
 
 class ExperimentSetup:
 
     def __init__(self, config):
-        self.graphicTerminal = True
+        self.graphicTerminal = False
         self.verbose_log = False
         self.resultFolder = 'data'
 
@@ -69,7 +69,7 @@ class ExperimentSetup:
         self.func_SERVICE_STORAGE_REQUIREMENT = lambda: random.randint(10, 60)
         self.MAX_PRIORITY = 1
         self.func_SERVICE_PRIORITY = lambda: random.randint(0, self.MAX_PRIORITY)
-        # self.func_APPDEADLINE = "random.randint(2600,6600)"  # MS
+        self.func_APPDEADLINE = lambda: random.randint(300,500000)  # MS
 
         # Users and IoT devices
         # App's popularity. This value define the probability of source request an application
@@ -88,7 +88,23 @@ class ExperimentSetup:
             self.loadConfigurations(config)
 
     def loadConfigurations(self, config):
-        pass
+        scenario = config['scenario']
+        if scenario == 'tiny':
+            self.NUM_GW_DEVICES = 5
+            self.NUM_FOG_NODES = 20
+            self.TOTAL_APPS_NUMBER = 5
+        if scenario == 'small':
+            self.NUM_GW_DEVICES = 10
+            self.NUM_FOG_NODES = 50
+            self.TOTAL_APPS_NUMBER = 10
+        if scenario == 'medium':
+            self.NUM_GW_DEVICES = 10
+            self.NUM_FOG_NODES = 50
+            self.TOTAL_APPS_NUMBER = 20
+        if scenario == 'large':
+            self.NUM_GW_DEVICES = 30
+            self.NUM_FOG_NODES = 100
+            self.TOTAL_APPS_NUMBER = 40
 
     def networkGeneration(self):
         # Generating network topology
@@ -223,7 +239,7 @@ class ExperimentSetup:
             for gw_node in list(self.cloudgatewaysDevices):
                 self.FGraph.add_edge(gw_node, self.cloudId, PR=self.CLOUDPR, BW=self.CLOUDBW)
             fig, ax = plt.subplots()
-            pos = nx.spring_layout(self.FGraph, pos=node_positions, fixed=list(range(0, 50)), seed=15612357, scale=500,
+            pos = nx.spring_layout(self.FGraph, pos=node_positions, fixed=list(range(0, self.NUM_FOG_NODES + self.NUM_GW_DEVICES)), seed=15612357, scale=500,
                                    center=[500, 500])
             nx.draw(self.FGraph, pos)
             nx.draw_networkx_labels(self.FGraph, pos, font_size=8)
@@ -307,7 +323,7 @@ class ExperimentSetup:
 
             self.appsSourceService.append(source)
 
-            self.appsDeadlines[i] = self.myDeadlines[i]
+            self.appsDeadlines[i] = self.func_APPDEADLINE()
 
             myApp['id'] = i
             myApp['name'] = str(i)
@@ -520,6 +536,7 @@ class ExperimentSetup:
         allocationFile = open(self.resultFolder + "/allocDefinitionMemetic.json", "w")
         allocationFile.write(json.dumps(allAlloc))
         allocationFile.close()
+        print("Memetic initial allocation performed!")
 
     def firstFitPlacement(self):
         servicesInFog = 0
@@ -567,8 +584,9 @@ class ExperimentSetup:
                             else:
                                 servicesInCloud += 1
                     if iterations == (len(sorted_nodeResources) - 1):
-                        print("After %i iterations it was not possible to place the module %i using the FirstFitPlacement" \
-                              % iterations, module)
+                        print(
+                            "After %i iterations it was not possible to place the module %i using the FirstFitPlacement" \
+                            % iterations, module)
                         exit()
         allAlloc['initialAllocation'] = myAllocationList
 
@@ -609,11 +627,3 @@ class ExperimentSetup:
         #     file.close()
 
         print("FirstFit initial allocation performed!")
-
-
-sg = ExperimentSetup(config=None)
-sg.networkGeneration()
-sg.appGeneration()
-sg.userGeneration()
-sg.firstFitPlacement()
-sg.memeticPlacement()
