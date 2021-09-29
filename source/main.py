@@ -9,6 +9,7 @@ import json
 import random
 import logging.config
 from ExperimentSetup import ExperimentSetup
+from ExperimentConfigs import configs
 
 import networkx as nx
 from pathlib import Path
@@ -50,7 +51,8 @@ def main(stop_time, it, algorithm, config):
     # selectorPath = MinimunPath()
     selectorPath = DeviceSpeedAwareRouting()
 
-    s = Sim(topo, default_results_path=folder_results + "Results_%s_%s_%i_%i" % (algorithm, config['scenario'], stop_time, it))
+    s = Sim(topo, default_results_path=folder_results + "Results_%s_%s_%i_%i" % (
+        algorithm, config['scenario'], stop_time, it))
 
     for aName in apps.keys():
         print("Deploying app: ", aName)
@@ -62,7 +64,7 @@ def main(stop_time, it, algorithm, config):
         pop_app.data["sources"] = data
         s.deploy_app2(apps[aName], placement, pop_app, selectorPath)
 
-    s.run(stop_time, show_progress_monitor=False)
+    s.run(stop_time, show_progress_monitor=True, test_initial_deploy=True)
 
 
 def initialize_experiment(configuration):
@@ -80,8 +82,11 @@ def initialize_experiment(configuration):
     file.write('%s, FirstFit, %s\n' % (config['scenario'], str(finish_time)))
 
     # Memetic Algorithm
+    num_creatures = 20
+    num_generations = 100
+
     start_time = time.time()  # measure time to complete
-    sg.memeticPlacement()
+    sg.memeticPlacement(num_creatures, num_generations)
     finish_time = time.time() - start_time
 
     file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
@@ -94,20 +99,13 @@ if __name__ == '__main__':
 
     # logging.config.fileConfig(os.getcwd() + '/logging.ini')
 
-    nIterations = 3  # iteration for each experiment
     simulationDuration = 10000
 
     algorithms = ['FirstFit', 'Memetic']
-    configs = [
-        {'scenario': 'tiny'},
-        {'scenario': 'small'},
-        {'scenario': 'medium'},
-        {'scenario': 'large'}
-    ]
 
-    # Iteration for each experiment changing the seed of randoms
+    # configs are from ExperimentConfigs file
     for config in configs:
-        for iteration in range(nIterations):
+        for iteration in range(config['iterations']):
             initialize_experiment(config)
 
             for algorithm in algorithms:

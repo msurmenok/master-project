@@ -1,5 +1,7 @@
 import pandas as pd
 
+from ExperimentConfigs import configs
+
 def compute_times_df(ldf):
     ldf["time_latency"] = ldf["time_reception"] - ldf["time_emit"]
     ldf["time_wait"] = ldf["time_in"] - ldf["time_reception"]
@@ -7,34 +9,34 @@ def compute_times_df(ldf):
     ldf["time_response"] = ldf["time_out"] - ldf["time_reception"]
     ldf["time_total_response"] = ldf["time_response"] + ldf["time_latency"]
 
-ff_avg_total_response = 0
-ff_avg_latency = 0
 
-memetic_avg_total_response = 0
-memetic_avg_latency = 0
 
-num_of_experiments = 10
+for config in configs:
+    print("----- Simulation Results for %s scenario" % config['scenario'])
+
+    ff_avg_total_response = 0
+    ff_avg_latency = 0
+
+    memetic_avg_total_response = 0
+    memetic_avg_latency = 0
+
+    num_of_experiments = 10
+
 
 for i in range(10):
     print("--------- %d Simulation Results ----------" % i)
     df_firstfit = pd.read_csv("results/Results_FirstFit_small_10000_%d.csv" % i)
-    # df_firstfit_links = pd.read_csv("results/Results_FirstFit_small_10000_0_link.csv")
 
     df_memetic = pd.read_csv("results/Results_Memetic_small_10000_%d.csv" % i)
-    # df_memetic_links = pd.read_csv("results/Results_Memetic_small_10000_0_link.csv")
 
 
     compute_times_df(df_firstfit)
-    # print(df_firstfit[["time_latency", "time_total_response"]])
-    # print("FF avg latency", df_firstfit["time_latency"].mean())
     print("FF total time total response", df_firstfit["time_total_response"].sum())
 
     ff_avg_total_response += df_firstfit["time_total_response"].sum()
     ff_avg_latency += df_firstfit["time_latency"].mean()
 
     compute_times_df(df_memetic)
-    # print(df_memetic[["time_latency", "time_total_response"]])
-    # print("Memetic avg latency", df_memetic["time_latency"].mean())
     print("Memetic total time total response", df_memetic["time_total_response"].sum())
 
     memetic_avg_latency += df_memetic["time_latency"].mean()

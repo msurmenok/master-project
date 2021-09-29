@@ -69,7 +69,7 @@ class ExperimentSetup:
         self.func_SERVICE_STORAGE_REQUIREMENT = lambda: random.randint(10, 60)
         self.MAX_PRIORITY = 1
         self.func_SERVICE_PRIORITY = lambda: random.randint(0, self.MAX_PRIORITY)
-        self.func_APPDEADLINE = lambda: random.randint(300,500000)  # MS
+        self.func_APPDEADLINE = lambda: random.randint(300, 500000)  # MS
 
         # Users and IoT devices
         # App's popularity. This value define the probability of source request an application
@@ -239,7 +239,9 @@ class ExperimentSetup:
             for gw_node in list(self.cloudgatewaysDevices):
                 self.FGraph.add_edge(gw_node, self.cloudId, PR=self.CLOUDPR, BW=self.CLOUDBW)
             fig, ax = plt.subplots()
-            pos = nx.spring_layout(self.FGraph, pos=node_positions, fixed=list(range(0, self.NUM_FOG_NODES + self.NUM_GW_DEVICES)), seed=15612357, scale=500,
+            pos = nx.spring_layout(self.FGraph, pos=node_positions,
+                                   fixed=list(range(0, self.NUM_FOG_NODES + self.NUM_GW_DEVICES)), seed=15612357,
+                                   scale=500,
                                    center=[500, 500])
             nx.draw(self.FGraph, pos)
             nx.draw_networkx_labels(self.FGraph, pos, font_size=8)
@@ -461,7 +463,7 @@ class ExperimentSetup:
         userFile.write(json.dumps(userJson))
         userFile.close()
 
-    def memeticPlacement(self):
+    def memeticPlacement(self, num_creatures, num_generations):
         index_to_fogid = {}
         index_to_module_app = {}
 
@@ -505,11 +507,10 @@ class ExperimentSetup:
         services_requirements = np.stack(services_requirements)
 
         # calling Memetic algorithm
-        num_creatures = 50
+        num_creatures = 20
         num_generations = 100
-        max_priority = 1
         placement = memetic_algorithm(num_creatures, num_generations, services_requirements, hosts_resources,
-                                      max_priority, self.DISTANCE_TO_CLOUD)
+                                      self.MAX_PRIORITY, self.DISTANCE_TO_CLOUD)
         print("memetic placement: ", placement)
 
         # convert placement indexes to devices id and save initial placement as json
