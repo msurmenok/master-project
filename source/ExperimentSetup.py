@@ -28,9 +28,9 @@ class ExperimentSetup:
         # CLOUD
         # CPU | MEM | DISK | TIME
         self.CLOUDSPEED = 10000  # INSTR x MS
-        self.CLOUD_PROCESS_RESOURCES = 999
+        self.CLOUD_PROCESS_RESOURCES = 9999999999999999
         self.CLOUD_RAM_RESOURCES = 9999999999999999  # MB RAM
-        self.CLOUD_STORAGE_RESOURCES = 99999999999999999
+        self.CLOUD_STORAGE_RESOURCES = 9999999999999999
         self.CLOUD_TIME_AVAILABILITY = sys.maxsize  # cloud always available
 
         self.CLOUDBW = 125000  # BYTES / MS --> 1000 Mbits/s
@@ -132,6 +132,7 @@ class ExperimentSetup:
             current_node_resources['TIME'] = node_time_availability
             current_node_resources['x'] = round(node_positions[i][0])
             current_node_resources['y'] = round(node_positions[i][1])
+            current_node_resources['TYPE'] = 'FOG'
 
             # replaced single RAM value with the dictionary of multiple resource requirements
             # self.nodeResources[i] = eval(self.func_NODE_RAM_RESOURECES)
@@ -148,7 +149,7 @@ class ExperimentSetup:
             myNode['TIME'] = self.nodeResources[i]['TIME']
             myNode['x'] = self.nodeResources[i]['x']
             myNode['y'] = self.nodeResources[i]['y']
-            myNode['type'] = 'FOG'
+            myNode['type'] = self.nodeResources[i]['TYPE']
             self.devices.append(myNode)
 
         for e in self.G.edges:
@@ -218,6 +219,7 @@ class ExperimentSetup:
         current_node_resources['TIME'] = self.CLOUD_TIME_AVAILABILITY
         current_node_resources['x'] = self.CLOUD_X
         current_node_resources['y'] = self.CLOUD_Y
+        current_node_resources['TYPE'] = 'CLOUD'
         self.nodeResources[self.cloudId] = current_node_resources
 
         # At the begging all the resources on the nodes are free
@@ -539,14 +541,16 @@ class ExperimentSetup:
         allocationFile.close()
         print("Memetic initial allocation performed!")
 
-    def firstFitPlacement(self):
+    def firstFitRAMPlacement(self):
         servicesInFog = 0
         servicesInCloud = 0
         allAlloc = {}
         myAllocationList = list()
         # random.seed(datetime.now())
+
         aux = sorted(self.nodeResources.items(), key=lambda x: x[1]['RAM'])
-        # aux = sorted(self.nodeResources.items(), key=operator.itemgetter(0))
+        # aux = sorted(self.nodeResources.items(), key=lambda x: x[1]['TIME'], reverse=True)
+
         sorted_nodeResources = [list(sub_list) for sub_list in aux]
 
         for app_num, app in zip(range(0, len(self.appsRequests)), self.appsRequests):
@@ -586,45 +590,84 @@ class ExperimentSetup:
                                 servicesInCloud += 1
                     if iterations == (len(sorted_nodeResources) - 1):
                         print(
-                            "After %i iterations it was not possible to place the module %i using the FirstFitPlacement" \
-                            % iterations, module)
+                            "After %i iterations it was not possible to place the module %i using the FirstFitRAMPlacement" \
+                            % (iterations, module))
                         exit()
         allAlloc['initialAllocation'] = myAllocationList
 
-        allocationFile = open(self.resultFolder + "/allocDefinitionFirstFit.json", "w")
+        allocationFile = open(self.resultFolder + "/allocDefinitionFirstFitRAM.json", "w")
         allocationFile.write(json.dumps(allAlloc))
         allocationFile.close()
 
         # Keeping nodes' resources
         final_nodeResources = sorted(self.nodeResources.items(), key=operator.itemgetter(0))
-        # if os.stat('C:\\Users\\David Perez Abreu\\Sources\\Fog\\YAFS_Master\\src\\examples\\PopularityPlacement\\conf\\node_resources.csv').st_size == 0:
-        #     # The file in empty
-        #     ids = ['node_id']
-        #     values = ['ini_resources']
-        #     token = self.scenario + '_first'
-        #     fvalues = [token]
-        #     for ftuple in initial_nodeResources:
-        #         ids.append(ftuple[0])
-        #         values.append(ftuple[1])
-        #     for stuple in final_nodeResources:
-        #         fvalues.append(stuple[1])
-        #     file = open('C:\\Users\\David Perez Abreu\\Sources\\Fog\\YAFS_Master\\src\\examples\\PopularityPlacement\\conf\\node_resources.csv', 'a+')
-        #     file.write(",".join(str(item) for item in ids))
-        #     file.write("\n")
-        #     file.write(",".join(str(item) for item in values))
-        #     file.write("\n")
-        #     file.write(",".join(str(item) for item in fvalues))
-        #     file.write("\n")
-        #     file.close()
-        # else:
-        #     token = self.scenario + '_first'
-        #     fvalues = [token]
-        #     for stuple in final_nodeResources:
-        #         fvalues.append(stuple[1])
-        #     file = open(
-        #         'C:\\Users\\David Perez Abreu\\Sources\\Fog\\YAFS_Master\\src\\examples\\PopularityPlacement\\conf\\node_resources.csv', 'a+')
-        #     file.write(",".join(str(item) for item in fvalues))
-        #     file.write("\n")
-        #     file.close()
 
-        print("FirstFit initial allocation performed!")
+        print("FirstFitRAM initial allocation performed!")
+
+    def firstFitTimePlacement(self):
+        servicesInFog = 0
+        servicesInCloud = 0
+        allAlloc = {}
+        myAllocationList = list()
+        # random.seed(datetime.now())
+
+        aux = sorted(self.nodeResources.items(), key=lambda x: x[1]['TIME'], reverse=True)
+        aux.append(aux.pop(0))
+
+        # we do not want cloud as the first option for placement, move cloud id to the end
+        sorted_nodeResources = [list(sub_list) for sub_list in aux]
+
+        for app_num, app in zip(range(0, len(self.appsRequests)), self.appsRequests):
+            for instance in range(0, len(self.appsRequests[app_num])):
+                for module in list(self.apps[app_num].nodes):
+                    flag = True
+                    iterations = 0
+                    while flag and iterations < (len(sorted_nodeResources) - 1):
+                        # Chosing the node with less resources to host the service
+                        index = iterations
+                        iterations += 1
+                        if sorted_nodeResources[index][0] in self.gatewaysDevices:
+                            continue
+                        # Checking if the node has resource to host the service
+                        res_required = self.servicesResources[module]
+                        if res_required['CPU'] <= sorted_nodeResources[index][1]['CPU'] and res_required['STORAGE'] <= \
+                                sorted_nodeResources[index][1]['STORAGE'] and res_required['RAM'] <= \
+                                sorted_nodeResources[index][1]['RAM']:
+                            remaining_resources = sorted_nodeResources[index][1]
+                            remaining_resources['CPU'] -= res_required['CPU']
+                            remaining_resources['STORAGE'] -= res_required['STORAGE']
+                            remaining_resources['RAM'] -= res_required['RAM']
+
+                            # Updating sorted resource list
+                            sorted_nodeResources[index][1] = remaining_resources
+                            # Updating nodeFreeResources
+                            self.nodeFreeResources[sorted_nodeResources[index][0]] = remaining_resources
+                            myAllocation = {}
+                            myAllocation['app'] = self.mapService2App[module]
+                            myAllocation['module_name'] = self.mapServiceId2ServiceName[module]
+                            myAllocation['id_resource'] = sorted_nodeResources[index][0]
+                            flag = False
+                            myAllocationList.append(myAllocation)
+                            if sorted_nodeResources[index][0] != self.cloudId:
+                                servicesInFog += 1
+                            else:
+                                servicesInCloud += 1
+                    if iterations == (len(sorted_nodeResources) - 1):
+                        print(
+                            "After %i iterations it was not possible to place the module %i using the FirstFitTimelacement" \
+                            % (iterations, module))
+                        exit()
+        allAlloc['initialAllocation'] = myAllocationList
+
+        allocationFile = open(self.resultFolder + "/allocDefinitionFirstFitTime.json", "w")
+        allocationFile.write(json.dumps(allAlloc))
+        allocationFile.close()
+
+        # Keeping nodes' resources
+        final_nodeResources = sorted(self.nodeResources.items(), key=operator.itemgetter(0))
+
+        print("FirstFitTime initial allocation performed!")
+        return({
+            "services_fog": servicesInFog,
+            "services_cloud": servicesInCloud
+        })

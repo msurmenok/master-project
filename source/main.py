@@ -64,7 +64,7 @@ def main(stop_time, it, algorithm, config):
         pop_app.data["sources"] = data
         s.deploy_app2(apps[aName], placement, pop_app, selectorPath)
 
-    s.run(stop_time, show_progress_monitor=True, test_initial_deploy=True)
+    s.run(stop_time, show_progress_monitor=False)
 
 
 def initialize_experiment(configuration):
@@ -73,17 +73,25 @@ def initialize_experiment(configuration):
     sg.appGeneration()
     sg.userGeneration()
 
-    # First Fit
+    # First Fit RAM
     start_time = time.time()  # measure time for placement
-    sg.firstFitPlacement()
+    sg.firstFitRAMPlacement()
     finish_time = time.time() - start_time
 
     file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
-    file.write('%s, FirstFit, %s\n' % (config['scenario'], str(finish_time)))
+    file.write('%s, FirstFitRAM, %s\n' % (config['scenario'], str(finish_time)))
+
+    # First Fit TIME
+    start_time = time.time()  # measure time for placement
+    sg.firstFitTimePlacement()
+    finish_time = time.time() - start_time
+
+    file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
+    file.write('%s, FirstFitTime, %s\n' % (config['scenario'], str(finish_time)))
 
     # Memetic Algorithm
-    num_creatures = 20
-    num_generations = 100
+    num_creatures = 100
+    num_generations = 1000
 
     start_time = time.time()  # measure time to complete
     sg.memeticPlacement(num_creatures, num_generations)
@@ -101,7 +109,7 @@ if __name__ == '__main__':
 
     simulationDuration = 10000
 
-    algorithms = ['FirstFit', 'Memetic']
+    algorithms = ['FirstFitRAM', 'FirstFitTime', 'Memetic']
 
     # configs are from ExperimentConfigs file
     for config in configs:
