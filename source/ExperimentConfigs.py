@@ -5,14 +5,18 @@ configs = [
     # },
     # {
     #     'scenario': 'small',
-    #     'iterations': 5
+    #     'iterations': 10
     # },
     {
         'scenario': 'medium',
-        'iterations': 20
+        'iterations': 10
     },
     {
         'scenario': 'large',
-        'iterations': 20
-    }
+        'iterations': 5
+    },
+    # {
+    #     'scenario': 'vlarge',
+    #     'iterations': 2
+    # }
 ]

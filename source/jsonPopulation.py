@@ -1,7 +1,7 @@
 import random
 
 from yafs.population import Population
-from yafs.distribution import exponential_distribution
+from yafs.distribution import exponential_distribution, deterministic_distribution, uniformDistribution
 from datetime import datetime
 
 
@@ -22,6 +22,9 @@ class JSONPopulation(Population):
                 app = sim.apps[app_name]
                 msg = app.get_message(item["message"])
                 random.seed(datetime.now())
-                dDistribution = exponential_distribution(name="Exp", lambd=lambd, seed=self.it)
+
+                dDistribution = exponential_distribution(name="Exp", lambd=random.randint(200, 1000), seed=self.it)
+                # dDistribution = deterministic_distribution(time=200,name='DetD')  # experiment
+
                 idsrc = sim.deploy_source(app_name, id_node=idtopo, msg=msg, distribution=dDistribution)
                 random.randint(200, 1000)

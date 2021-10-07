@@ -31,7 +31,7 @@ class ExperimentSetup:
         self.CLOUD_PROCESS_RESOURCES = 9999999999999999
         self.CLOUD_RAM_RESOURCES = 9999999999999999  # MB RAM
         self.CLOUD_STORAGE_RESOURCES = 9999999999999999
-        self.CLOUD_TIME_AVAILABILITY = sys.maxsize  # cloud always available
+        self.CLOUD_TIME_AVAILABILITY = 9999999999999999  # cloud always available
 
         self.CLOUDBW = 125000  # BYTES / MS --> 1000 Mbits/s
         self.CLOUDPR = 500  # MS
@@ -41,9 +41,9 @@ class ExperimentSetup:
         self.cloudId = -1
 
         # NETWORK
-        # self.PERCENTATGEOFGATEWAYS = 0.25
-        self.NUM_GW_DEVICES = 10  # these devices will not be used for service placement, only as source of events
+        self.PERCENTAGE_OF_GATEWAYS = 0.25
         self.NUM_FOG_NODES = 50
+        self.NUM_GW_DEVICES = round(self.NUM_FOG_NODES * self.PERCENTAGE_OF_GATEWAYS / (1 - self.PERCENTAGE_OF_GATEWAYS)) # these devices will not be used for service placement, only as source of events
         self.func_BANDWITDH = lambda: random.randint(75000, 75000)  # BYTES / MS
 
         # # INTS / MS #random distribution for the speed of the fog devices
@@ -65,11 +65,13 @@ class ExperimentSetup:
         # MB of RAM consume by services. Considering noderesources & appgeneration it will be possible to allocate
         # 1 app or +/- 10 services per node
         self.func_SERVICE_RAM_REQUIREMENT = lambda: random.randint(1, 5)
-        self.func_SERVICE_PROCESS_REQUIREMENT = lambda: round(random.uniform(0.10, 0.60), 2)
-        self.func_SERVICE_STORAGE_REQUIREMENT = lambda: random.randint(10, 60)
+        self.func_SERVICE_PROCESS_REQUIREMENT = lambda: round(random.uniform(0.10, 0.50), 2)
+        self.func_SERVICE_STORAGE_REQUIREMENT = lambda: random.randint(10, 50)
         self.MAX_PRIORITY = 1
         self.func_SERVICE_PRIORITY = lambda: random.randint(0, self.MAX_PRIORITY)
-        self.func_APPDEADLINE = lambda: random.randint(300, 500000)  # MS
+        # TODO: change back after the experiment
+        self.func_APPDEADLINE = lambda: random.randint(5000000, 5000000)  # MS
+        # self.func_APPDEADLINE = lambda: random.randint(300, 500000)  # MS
 
         # Users and IoT devices
         # App's popularity. This value define the probability of source request an application
@@ -90,21 +92,25 @@ class ExperimentSetup:
     def loadConfigurations(self, config):
         scenario = config['scenario']
         if scenario == 'tiny':
-            self.NUM_GW_DEVICES = 5
             self.NUM_FOG_NODES = 20
             self.TOTAL_APPS_NUMBER = 5
+            self.NUM_GW_DEVICES = round(self.NUM_FOG_NODES * self.PERCENTAGE_OF_GATEWAYS / (1 - self.PERCENTAGE_OF_GATEWAYS))
         if scenario == 'small':
-            self.NUM_GW_DEVICES = 10
             self.NUM_FOG_NODES = 50
             self.TOTAL_APPS_NUMBER = 10
+            self.NUM_GW_DEVICES = round(self.NUM_FOG_NODES * self.PERCENTAGE_OF_GATEWAYS / (1 - self.PERCENTAGE_OF_GATEWAYS))
         if scenario == 'medium':
-            self.NUM_GW_DEVICES = 10
             self.NUM_FOG_NODES = 50
             self.TOTAL_APPS_NUMBER = 20
+            self.NUM_GW_DEVICES = round(self.NUM_FOG_NODES * self.PERCENTAGE_OF_GATEWAYS / (1 - self.PERCENTAGE_OF_GATEWAYS))
         if scenario == 'large':
-            self.NUM_GW_DEVICES = 30
             self.NUM_FOG_NODES = 100
             self.TOTAL_APPS_NUMBER = 40
+            self.NUM_GW_DEVICES = round(self.NUM_FOG_NODES * self.PERCENTAGE_OF_GATEWAYS / (1 - self.PERCENTAGE_OF_GATEWAYS))
+        if scenario == 'verylarge':
+            self.NUM_FOG_NODES = 150
+            self.TOTAL_APPS_NUMBER = 100
+            self.NUM_GW_DEVICES = round(self.NUM_FOG_NODES * self.PERCENTAGE_OF_GATEWAYS / (1 - self.PERCENTAGE_OF_GATEWAYS))
 
     def networkGeneration(self):
         # Generating network topology
@@ -157,9 +163,11 @@ class ExperimentSetup:
             node1 = next((x for x in self.devices if x['id'] == e[0]), None)
             node2 = next((x for x in self.devices if x['id'] == e[1]), None)
             scale = 50  # scale the result so that maximum transmission b/w nodes is 10 ms
+
             minimum_pr = 2  # if calculated value is below 2, set it to 2
             distance = math.sqrt((node1['x'] - node2['x']) ** 2 + (node1['y'] - node2['y']) ** 2)
             pr = max(int(distance / scale), minimum_pr)
+
             self.G[e[0]][e[1]]['PR'] = pr
             self.G[e[0]][e[1]]['BW'] = self.func_BANDWITDH()
 
@@ -223,7 +231,7 @@ class ExperimentSetup:
         self.nodeResources[self.cloudId] = current_node_resources
 
         # At the begging all the resources on the nodes are free
-        self.nodeFreeResources = self.nodeResources
+        self.nodeFreeResources = copy.deepcopy(self.nodeResources)
 
         # add edge between cloud gateway and cloud node
         for cloudGtw in self.cloudgatewaysDevices:
@@ -540,15 +548,18 @@ class ExperimentSetup:
         allocationFile.write(json.dumps(allAlloc))
         allocationFile.close()
         print("Memetic initial allocation performed!")
+        return (servicesInFog,servicesInCloud)
 
     def firstFitRAMPlacement(self):
+        # self.nodeFreeResources = copy.deepcopy(self.nodeResources)
         servicesInFog = 0
         servicesInCloud = 0
         allAlloc = {}
         myAllocationList = list()
         # random.seed(datetime.now())
 
-        aux = sorted(self.nodeResources.items(), key=lambda x: x[1]['RAM'])
+        aux = copy.deepcopy(self.nodeResources)
+        aux = sorted(aux.items(), key=lambda x: x[1]['RAM'])
         # aux = sorted(self.nodeResources.items(), key=lambda x: x[1]['TIME'], reverse=True)
 
         sorted_nodeResources = [list(sub_list) for sub_list in aux]
@@ -558,7 +569,7 @@ class ExperimentSetup:
                 for module in list(self.apps[app_num].nodes):
                     flag = True
                     iterations = 0
-                    while flag and iterations < (len(sorted_nodeResources) - 1):
+                    while flag and iterations < len(sorted_nodeResources):
                         # Chosing the node with less resources to host the service
                         index = iterations
                         iterations += 1
@@ -588,7 +599,7 @@ class ExperimentSetup:
                                 servicesInFog += 1
                             else:
                                 servicesInCloud += 1
-                    if iterations == (len(sorted_nodeResources) - 1):
+                    if flag and iterations == (len(sorted_nodeResources) - 1):
                         print(
                             "After %i iterations it was not possible to place the module %i using the FirstFitRAMPlacement" \
                             % (iterations, module))
@@ -603,15 +614,18 @@ class ExperimentSetup:
         final_nodeResources = sorted(self.nodeResources.items(), key=operator.itemgetter(0))
 
         print("FirstFitRAM initial allocation performed!")
+        return (servicesInFog,servicesInCloud)
 
     def firstFitTimePlacement(self):
+        self.nodeFreeResources = copy.deepcopy(self.nodeResources)
         servicesInFog = 0
         servicesInCloud = 0
         allAlloc = {}
         myAllocationList = list()
         # random.seed(datetime.now())
 
-        aux = sorted(self.nodeResources.items(), key=lambda x: x[1]['TIME'], reverse=True)
+        aux = copy.deepcopy(self.nodeResources)
+        aux = sorted(aux.items(), key=lambda x: x[1]['TIME'], reverse=True)
         aux.append(aux.pop(0))
 
         # we do not want cloud as the first option for placement, move cloud id to the end
@@ -622,7 +636,7 @@ class ExperimentSetup:
                 for module in list(self.apps[app_num].nodes):
                     flag = True
                     iterations = 0
-                    while flag and iterations < (len(sorted_nodeResources) - 1):
+                    while flag and iterations < len(sorted_nodeResources):
                         # Chosing the node with less resources to host the service
                         index = iterations
                         iterations += 1
@@ -630,6 +644,7 @@ class ExperimentSetup:
                             continue
                         # Checking if the node has resource to host the service
                         res_required = self.servicesResources[module]
+
                         if res_required['CPU'] <= sorted_nodeResources[index][1]['CPU'] and res_required['STORAGE'] <= \
                                 sorted_nodeResources[index][1]['STORAGE'] and res_required['RAM'] <= \
                                 sorted_nodeResources[index][1]['RAM']:
@@ -652,7 +667,7 @@ class ExperimentSetup:
                                 servicesInFog += 1
                             else:
                                 servicesInCloud += 1
-                    if iterations == (len(sorted_nodeResources) - 1):
+                    if flag and iterations == (len(sorted_nodeResources) - 1):
                         print(
                             "After %i iterations it was not possible to place the module %i using the FirstFitTimelacement" \
                             % (iterations, module))
@@ -667,7 +682,4 @@ class ExperimentSetup:
         final_nodeResources = sorted(self.nodeResources.items(), key=operator.itemgetter(0))
 
         print("FirstFitTime initial allocation performed!")
-        return({
-            "services_fog": servicesInFog,
-            "services_cloud": servicesInCloud
-        })
+        return ((servicesInFog, servicesInCloud))

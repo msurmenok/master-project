@@ -75,30 +75,33 @@ def initialize_experiment(configuration):
 
     # First Fit RAM
     start_time = time.time()  # measure time for placement
-    sg.firstFitRAMPlacement()
+    services_placement_count = sg.firstFitRAMPlacement()
     finish_time = time.time() - start_time
 
+    services_in_fog, services_in_cloud = services_placement_count
     file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
-    file.write('%s, FirstFitRAM, %s\n' % (config['scenario'], str(finish_time)))
+    file.write('%s,FirstFitRAM,%s,%s,%s\n' % (config['scenario'], str(finish_time), str(services_in_fog), str(services_in_cloud)))
 
     # First Fit TIME
     start_time = time.time()  # measure time for placement
-    sg.firstFitTimePlacement()
+    services_placement_count = sg.firstFitTimePlacement()
     finish_time = time.time() - start_time
 
+    services_in_fog, services_in_cloud = services_placement_count
     file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
-    file.write('%s, FirstFitTime, %s\n' % (config['scenario'], str(finish_time)))
+    file.write('%s,FirstFitTime,%s,%s,%s\n' % (config['scenario'], str(finish_time), str(services_in_fog), str(services_in_cloud)))
 
     # Memetic Algorithm
     num_creatures = 100
     num_generations = 1000
 
     start_time = time.time()  # measure time to complete
-    sg.memeticPlacement(num_creatures, num_generations)
+    services_placement_count = sg.memeticPlacement(num_creatures, num_generations)
     finish_time = time.time() - start_time
 
+    services_in_fog, services_in_cloud = services_placement_count
     file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
-    file.write('%s, Memetic, %s\n' % (config['scenario'], str(finish_time)))
+    file.write('%s,Memetic,%s,%s,%s\n' % (config['scenario'], str(finish_time), str(services_in_fog), str(services_in_cloud)))
 
     file.close()
 
@@ -110,6 +113,7 @@ if __name__ == '__main__':
     simulationDuration = 10000
 
     algorithms = ['FirstFitRAM', 'FirstFitTime', 'Memetic']
+    # algorithms = ['FirstFitRAM', 'FirstFitTime']
 
     # configs are from ExperimentConfigs file
     for config in configs:

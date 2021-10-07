@@ -109,8 +109,12 @@ def fitness(individual, services, hosts, user_to_host_distance, distance_to_clou
     active_hosts_indexes = np.unique(individual)
     active_hosts_indexes = [x for x in active_hosts_indexes if not np.isnan(x)]
     f3 = 0
-    for host_index in active_hosts_indexes:
-        f3 += hosts[int(host_index)][time_index]
+    # for host_index in active_hosts_indexes:
+    #     f3 += hosts[int(host_index)][time_index]
+
+    for i in range(len(individual)):
+        if not np.isnan(individual[i]):
+            f3 += hosts[int(individual[i])][time_index]
 
     # MIN, F4
     # Host Distance Minimization
@@ -131,6 +135,9 @@ def fitness(individual, services, hosts, user_to_host_distance, distance_to_clou
 
     # weights, sum of all weights should be equal 1:
     w1 = w2 = w3 = w4 = w5 = 0.2
+    # weights for successful placement
+    w1 = 1000
+    w2 = 1000
     # add all max objectives, subtract all min objectives
     objectives = np.array([(f1 * w1), (f2 * w2), (f3 * w3), (f4 * w4), (f5 * w5)])
     return objectives
