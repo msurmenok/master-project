@@ -143,24 +143,6 @@ def fitness(individual, services, hosts, user_to_host_distance, distance_to_clou
     objectives = np.array([(f1 * w1), (f2 * w2), (f3 * w3), (f4 * w4), (f5 * w5)])
     return objectives
 
-
-# local search
-def local_search(population, utilization, hosts, services, number_of_individuals, h_size, s_size):
-    for i in range(number_of_individuals):
-        random_number = np.random.uniform(low=0.0, high=1.0)
-        if random_number > 0.5:
-            population[i], utilization[i] = minimize_running_hosts(population[i], utilization[i], hosts, services,
-                                                                   number_of_individuals, h_size, s_size)
-            population[i], utilization[i] = maximize_running_services(population[i], utilization[i], hosts, services,
-                                                                      number_of_individuals, h_size, s_size)
-        else:
-            population[i], utilization[i] = minimize_running_hosts(population[i], utilization[i], hosts, services,
-                                                                   number_of_individuals, h_size, s_size)
-            population[i], utilization[i] = maximize_running_services(population[i], utilization[i], hosts, services,
-                                                                      number_of_individuals, h_size, s_size)
-    return population, utilization
-
-
 # helper function for local search
 def minimize_running_hosts(creature, hosts_utilization_for_creature, hosts, services, number_of_individuals, h_size,
                            s_size):
@@ -392,7 +374,7 @@ def population_evolution(P, Q, objectives_functions_P, objectives_functions_Q, f
     return P
 
 
-def memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY, distance_to_cloud):
+def memetic_algorithm_no_local_search(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY, distance_to_cloud):
     num_services = len(services)
     num_hosts = len(hosts)
     num_objective_functions = 5
@@ -422,9 +404,11 @@ def memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIOR
         repaired_population[i] = result[0]
         hosts_utilization_for_each_creature[i] = result[1]
 
+    P = repaired_population
     # apply local search to solutions
-    P, hosts_utilization_for_each_creature = local_search(repaired_population, hosts_utilization_for_each_creature,
-                                                          hosts, services, num_creatures, num_hosts, num_services)
+    # P, hosts_utilization_for_each_creature = local_search(repaired_population, hosts_utilization_for_each_creature,
+    #                                                       hosts,
+    #                                                           services, num_creatures, num_hosts, num_services)
 
     # calculate the cost of each objective function for each solution
     objectives_functions_P = np.zeros((num_creatures, num_objective_functions))
@@ -469,7 +453,7 @@ def memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIOR
             Q[i] = result[0]
             utilization_Q[i] = result[1]
 
-        Q, utilization_Q = local_search(Q, utilization_Q, hosts, services, num_creatures, num_hosts, num_services)
+        # Q, utilization_Q = local_search(Q, utilization_Q, hosts, services, num_creatures, num_hosts, num_services)
 
         # calculate the cost of each objective function for each solution
         for i in range(num_creatures):
@@ -685,7 +669,7 @@ def test_memetic():
     # num_services = 3
     # num_hosts = 5  # number of hosts may be different if we add extra during repair
     MAX_PRIORITY = 1  # max priority can be 0 or 1
-    placement = memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY, 18200)
+    placement = memetic_algorithm_no_local_search(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY, 18200)
     # print("Best placement: ", placement)
 
 

@@ -92,9 +92,20 @@ def initialize_experiment(configuration):
     file.write('%s,FirstFitTime,%s,%s,%s\n' % (config['scenario'], str(finish_time), str(services_in_fog), str(services_in_cloud)))
 
     # Memetic Algorithm
-    num_creatures = 100
-    num_generations = 1000
+    num_creatures = 20
+    num_generations = 100
 
+    # Memetic Algorithm without Local Search
+    start_time = time.time()  # measure time to complete
+    services_placement_count = sg.memeticWithoutLocalSearchPlacement(num_creatures, num_generations)
+    finish_time = time.time() - start_time
+
+    services_in_fog, services_in_cloud = services_placement_count
+    file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
+    file.write('%s,MemeticWithoutLocalSearch,%s,%s,%s\n' % (config['scenario'], str(finish_time), str(services_in_fog), str(services_in_cloud)))
+
+
+    # Memetic Algorithm with Local Search
     start_time = time.time()  # measure time to complete
     services_placement_count = sg.memeticPlacement(num_creatures, num_generations)
     finish_time = time.time() - start_time
@@ -110,9 +121,10 @@ if __name__ == '__main__':
 
     # logging.config.fileConfig(os.getcwd() + '/logging.ini')
 
-    simulationDuration = 10000
+    # simulationDuration = 10000
+    simulationDuration = 100000
 
-    algorithms = ['FirstFitRAM', 'FirstFitTime', 'Memetic']
+    algorithms = ['FirstFitRAM', 'FirstFitTime', 'MemeticWithoutLocalSearch', 'Memetic']
     # algorithms = ['FirstFitRAM', 'FirstFitTime']
 
     # configs are from ExperimentConfigs file
