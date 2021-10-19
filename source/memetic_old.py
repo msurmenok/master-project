@@ -85,11 +85,7 @@ def repair(services, individual, hosts_utilization, MAX_PRIORITY):
     return (individual, np.copy(hosts_utilization))
 
 
-def fitness(individual, services, hosts, user_to_host_distance, distance_to_cloud, max_priority, num_services,
-            num_hosts, num_important_services, max_surv, max_distance):
-    priority_index = 3  # the last index (3) in services describes its priority
-    time_index = 3  # index 3 in host describes how long it is available
-
+def fitness(individual, services, hosts, user_to_host_distance, distance_to_cloud):
     # MAX, F1 - Number of Pushed Services Maximization
     f1 = 0
     for i in range(len(individual)):
@@ -100,12 +96,11 @@ def fitness(individual, services, hosts, user_to_host_distance, distance_to_clou
     # MAX, F2 - QoS Maximization: maximum number of services with high priorities are pushed
     # F2 = sum of all servies i (Cpi * Pi * Ri),
     # Cpi - constant that prioritize services with high P i over others with low value
-    # c_pi = 10  # constant set to 10 in paper description
-    c_pi = 1
+    c_pi = 10  # constant set to 10 in paper description
     f2 = 0
-
+    priority_index = 3  # the last index (3) in services describes its priority
     for i in range(len(individual)):
-        p_i = 1 if (services[i][priority_index] == max_priority) else 0
+        p_i = services[i][priority_index]
         if not np.isnan(individual[i]):
             # if the service host index is not Nan, then this service was placed sucessfully
             f2 += c_pi * p_i
@@ -113,17 +108,15 @@ def fitness(individual, services, hosts, user_to_host_distance, distance_to_clou
     # MAX, F3 - Survivability Factor Maximization
     # Maximizing the time a device is available to host particular services
     # sum of all hosts time availability that hosts at least one service
+    time_index = 3  # index 3 in host describes how long it is available
     active_hosts_indexes = np.unique(individual)
     active_hosts_indexes = [x for x in active_hosts_indexes if not np.isnan(x)]
     f3 = 0
     # for host_index in active_hosts_indexes:
     #     f3 += hosts[int(host_index)][time_index]
 
-    # num_busy_hosts may include duplicates, used for normalization only
-    num_busy_hosts = 0
     for i in range(len(individual)):
         if not np.isnan(individual[i]):
-            num_busy_hosts += 1
             f3 += hosts[int(individual[i])][time_index]
 
     # MIN, F4
@@ -144,106 +137,97 @@ def fitness(individual, services, hosts, user_to_host_distance, distance_to_clou
     f5 = len(active_hosts_indexes)
 
     # weights, sum of all weights should be equal 1:
-    w1 = w2 = w3 = w4 = w5 = 1
+    w1 = w2 = w3 = w4 = w5 = 0.2
     # weights for successful placement
 
     # add all max objectives, subtract all min objectives
     # objectives = np.array([f1, f2, f3, f4, f5])
-    # w1 = 1000
-    # w2 = 1000
+    w1 = 1000
+    w2 = 1000
     # add all max objectives, subtract all min objectives
-    objectives = np.array(
-        [(f1 * w1) / num_services, (f2 * w2) / num_important_services, (f3 * w3) / (num_busy_hosts * max_surv),
-         (f4 * w4) / (num_busy_hosts * max_distance), (f5 * w5) / num_hosts])
+    objectives = np.array([(f1 * w1), (f2 * w2), (f3 * w3), (f4 * w4), (f5 * w5)])
     return objectives
 
 
 # local search
 def local_search(population, utilization, hosts, services, number_of_individuals, h_size, s_size):
-    iterator_individual = 0
-    physical_position = 0
-    physical_position2 = 0
-    iterator_position = 0
-    iterator_virtual = 0
-    iterator_virtual2 = 0
-    iterator_physical = 0
-    option = 0
-
-    option_to_execute = 0
-    val_rand = np.random.uniform(low=0.0, high=1.0)
-
-    if val_rand > 0 and val_rand <= 0.5:
-        option_to_execute = 0
-    else:
-        option_to_execute = 3
-
-    while option < 2:
-        if val_rand > 0 and val_rand <= 0.5:
-            option_to_execute += 1
-            option += 1
-        elif val_rand > 0.5 and val_rand < 1.0:
-            option_to_execute -= 1
-            option += 1
-
-        if option_to_execute == 1:
-            for iterator_individual in range(number_of_individuals):
-                for iterator_virtual in range(s_size):
-                    physical_position = population[iterator_individual][iterator_virtual]
-                    if not np.isnan(physical_position):
-                        physical_position = int(physical_position)
-                        for iterator_virtual2 in range(s_size):
-                            physical_position2 = population[iterator_individual][iterator_virtual2]
-                            if not np.isnan(physical_position2):
-                                physical_position2 = int(physical_position2)
-                                if physical_position != physical_position2:
-                                    if utilization[iterator_individual][physical_position][0] - \
-                                            services[iterator_virtual2][0] >= 0 \
-                                            and utilization[iterator_individual][physical_position][1] - \
-                                            services[iterator_virtual2][1] >= 0 \
-                                            and utilization[iterator_individual][physical_position][2] - \
-                                            services[iterator_virtual2][2] >= 0:
-                                        utilization[iterator_individual][physical_position2][0] += \
-                                        services[iterator_virtual2][0]
-                                        utilization[iterator_individual][physical_position2][1] += \
-                                        services[iterator_virtual2][1]
-                                        utilization[iterator_individual][physical_position2][2] += \
-                                        services[iterator_virtual2][2]
-
-                                        utilization[iterator_individual][physical_position][0] -= \
-                                        services[iterator_virtual2][0]
-                                        utilization[iterator_individual][physical_position][1] -= \
-                                        services[iterator_virtual2][1]
-                                        utilization[iterator_individual][physical_position][2] -= \
-                                        services[iterator_virtual2][2]
-                                        population[iterator_individual][iterator_virtual2] = \
-                                        population[iterator_individual][iterator_virtual]
-
-        if option_to_execute == 2:
-            for iterator_individual in range(number_of_individuals):
-                for iterator_virtual in range(s_size):
-                    physical_position = population[iterator_individual][iterator_virtual]
-                    if np.isnan(physical_position):
-                        for iterator_virtual2 in range(s_size):
-                            physical_position2 = population[iterator_individual][iterator_virtual2]
-                            if not np.isnan(physical_position2):
-                                physical_position2 = int(physical_position2)
-                                if utilization[iterator_individual][physical_position2][0] - \
-                                        services[iterator_virtual][0] >= 0 \
-                                        and utilization[iterator_individual][physical_position2][1] - \
-                                        services[iterator_virtual][1] >= 0 \
-                                        and utilization[iterator_individual][physical_position2][2] - \
-                                        services[iterator_virtual][2] >= 0:
-                                    utilization[iterator_individual][physical_position2][0] -= \
-                                    services[iterator_virtual][0]
-                                    utilization[iterator_individual][physical_position2][1] -= \
-                                    services[iterator_virtual][1]
-                                    utilization[iterator_individual][physical_position2][2] -= \
-                                    services[iterator_virtual][2]
-                                    population[iterator_individual][iterator_virtual] = population[iterator_individual][
-                                        iterator_virtual2]
-                                    break
+    for i in range(number_of_individuals):
+        random_number = np.random.uniform(low=0.0, high=1.0)
+        if random_number > 0.5:
+            population[i], utilization[i] = minimize_running_hosts(population[i], utilization[i], hosts, services,
+                                                                   number_of_individuals, h_size, s_size)
+            population[i], utilization[i] = maximize_running_services(population[i], utilization[i], hosts, services,
+                                                                      number_of_individuals, h_size, s_size)
+        else:
+            population[i], utilization[i] = minimize_running_hosts(population[i], utilization[i], hosts, services,
+                                                                   number_of_individuals, h_size, s_size)
+            population[i], utilization[i] = maximize_running_services(population[i], utilization[i], hosts, services,
+                                                                      number_of_individuals, h_size, s_size)
     return population, utilization
 
+
+# helper function for local search
+def minimize_running_hosts(creature, hosts_utilization_for_creature, hosts, services, number_of_individuals, h_size,
+                           s_size):
+    # iterate over services (placement) trying to move services to the same host
+    for i in range(s_size):
+        physical_position = creature[i]
+        if not np.isnan(physical_position):
+            physical_position = int(creature[i])
+            # iterate over other hosts
+            for j in range(s_size):
+                physical_position_2 = creature[j]
+                if not np.isnan(physical_position_2) and physical_position != physical_position_2:
+                    # check if there's enough resources to migration the second service into
+                    # the host where first service is placed
+                    physical_position_2 = int(creature[j])
+                    if hosts_utilization_for_creature[physical_position][0] - services[j][0] > 0 and \
+                            hosts_utilization_for_creature[physical_position][1] - services[j][1] > 0 and \
+                            hosts_utilization_for_creature[physical_position][2] - services[j][2] > 0:
+                        # migrate service j
+                        creature[j] = physical_position
+                        # update utilization
+                        hosts_utilization_for_creature[physical_position][0] = \
+                            hosts_utilization_for_creature[physical_position][0] - services[j][0]
+                        hosts_utilization_for_creature[physical_position][1] = \
+                            hosts_utilization_for_creature[physical_position][1] - services[j][1]
+                        hosts_utilization_for_creature[physical_position][2] = \
+                            hosts_utilization_for_creature[physical_position][2] - services[j][2]
+
+                        hosts_utilization_for_creature[physical_position_2][0] = \
+                            hosts_utilization_for_creature[physical_position_2][0] + services[j][0]
+                        hosts_utilization_for_creature[physical_position_2][1] = \
+                            hosts_utilization_for_creature[physical_position_2][1] + services[j][1]
+                        hosts_utilization_for_creature[physical_position_2][2] = \
+                            hosts_utilization_for_creature[physical_position_2][2] + services[j][2]
+    return creature, hosts_utilization_for_creature
+
+
+# second helper function for local search
+def maximize_running_services(creature, hosts_utilization_for_creature, hosts, services, number_of_individuals, h_size,
+                              s_size):
+    for i in range(s_size):
+        physical_position = creature[i]
+        if np.isnan(physical_position):
+            # iterate over other hosts
+            for j in range(s_size):
+                physical_position_2 = creature[j]
+                if not np.isnan(physical_position_2):
+                    physical_position_2 = int(creature[j])
+                    # If the use of the VM not exceeds the capacity of the physical machine performs the migration
+                    if hosts_utilization_for_creature[physical_position_2][0] - services[i][0] > 0 and \
+                            hosts_utilization_for_creature[physical_position_2][1] - services[i][1] > 0 and \
+                            hosts_utilization_for_creature[physical_position_2][2] - services[i][2] > 0:
+                        creature[i] = physical_position_2
+                        hosts_utilization_for_creature[physical_position_2][0] = \
+                            hosts_utilization_for_creature[physical_position_2][0] - services[i][0]
+                        hosts_utilization_for_creature[physical_position_2][1] = \
+                            hosts_utilization_for_creature[physical_position_2][1] - services[i][1]
+                        hosts_utilization_for_creature[physical_position_2][2] = \
+                            hosts_utilization_for_creature[physical_position_2][2] - services[j][2]
+                        break
+
+    return creature, hosts_utilization_for_creature
 
 
 def non_dominated_sorting(solutions, number_of_individuals):
@@ -454,20 +438,10 @@ def memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIOR
     P, hosts_utilization_for_each_creature = local_search(repaired_population, hosts_utilization_for_each_creature,
                                                           hosts, services, num_creatures, num_hosts, num_services)
 
-    # parameters to normalize fitness function
-    priority_index = 3  # the last index (3) in services describes its priority
-    time_index = 3  # index 3 in host describes how long it is available
-    num_important_services = services[(services[:, priority_index] == MAX_PRIORITY)]
-    num_important_services, _ = num_important_services.shape
-    max_surv = (hosts.max(axis=0))
-    max_surv = max_surv[time_index]
-    max_distance = np.amax(user_to_host_distance)
-
     # calculate the cost of each objective function for each solution
     objectives_functions_P = np.zeros((num_creatures, num_objective_functions))
     for i in range(num_creatures):
-        fitness_score = fitness(P[i], services, hosts, user_to_host_distance, distance_to_cloud, MAX_PRIORITY,
-                                num_services, num_hosts, num_important_services, max_surv, max_distance)
+        fitness_score = fitness(P[i], services, hosts, user_to_host_distance, distance_to_cloud)
         objectives_functions_P[i] = fitness_score
 
     # calculate the non-dominated fronts
@@ -511,8 +485,7 @@ def memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIOR
 
         # calculate the cost of each objective function for each solution
         for i in range(num_creatures):
-            fitness_score = fitness(Q[i], services, hosts, user_to_host_distance, distance_to_cloud, MAX_PRIORITY,
-                                    num_services, num_hosts, num_important_services, max_surv, max_distance)
+            fitness_score = fitness(Q[i], services, hosts, user_to_host_distance, distance_to_cloud)
             objectives_functions_Q[i] = fitness_score
         # calculate the non-dominated fronts
         fronts_Q = non_dominated_sorting(objectives_functions_Q, num_creatures)
@@ -528,7 +501,7 @@ def memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIOR
 
     # report the best
     # cost_solution = report_best_population(P, distance_to_cloud, hosts, num_creatures, num_objective_functions,
-    #                                        services, user_to_host_distance, MAX_PRIORITY)
+    #                                        services, user_to_host_distance)
     cost_solution = report_best_population2(pareto_head, hosts, services, num_hosts, num_services)
     return cost_solution[0][0]
 
@@ -563,12 +536,10 @@ def report_best_population2(pareto_head, hosts, services, h_size, s_size):
 
 
 def report_best_population(P, distance_to_cloud, hosts, num_creatures, num_objective_functions, services,
-                           user_to_host_distance, max_priority, num_services, num_hosts, num_important_services,
-                           max_surv, max_distance):
+                           user_to_host_distance, max_priority):
     objectives_functions_P = np.zeros((num_creatures, num_objective_functions))
     for i in range(num_creatures):
-        fitness_score = fitness(P[i], services, hosts, user_to_host_distance, distance_to_cloud, max_priority,
-                                num_services, num_hosts, num_important_services, max_surv, max_distance)
+        fitness_score = fitness(P[i], services, hosts, user_to_host_distance, distance_to_cloud)
         objectives_functions_P[i] = fitness_score
     fronts_best_P = non_dominated_sorting(objectives_functions_P, num_creatures)
     # sort by best fitness value:
@@ -757,7 +728,7 @@ def test_memetic():
     # num_services = 3
     # num_hosts = 5  # number of hosts may be different if we add extra during repair
     MAX_PRIORITY = 1  # max priority can be 0 or 1
-    placement = memetic_experimental(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY, 18200)
+    placement = memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY, 18200)
     # print("Best placement: ", placement)
 
 
@@ -786,6 +757,5 @@ def doprofiling():
 
     print('==========================')
     print("total time = ", total_time)
-
 
 # doprofiling()

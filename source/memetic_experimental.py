@@ -420,11 +420,13 @@ def population_evolution(P, Q, objectives_functions_P, objectives_functions_Q, f
     return P
 
 
-def memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY, distance_to_cloud):
+def memetic_experimental(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY, distance_to_cloud):
     num_services = len(services)
     num_hosts = len(hosts)
     num_objective_functions = 5
     SELECTION_PERCENT = 0.5
+
+    lc_frequency = 5
 
     # calculate distance between each user (who requested service) and host using x, y coordinates
     # row (outer index) = service id, column (inner index) = host id
@@ -507,7 +509,8 @@ def memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIOR
             Q[i] = result[0]
             utilization_Q[i] = result[1]
 
-        Q, utilization_Q = local_search(Q, utilization_Q, hosts, services, num_creatures, num_hosts, num_services)
+        if generation % lc_frequency == 0:
+            Q, utilization_Q = local_search(Q, utilization_Q, hosts, services, num_creatures, num_hosts, num_services)
 
         # calculate the cost of each objective function for each solution
         for i in range(num_creatures):
@@ -788,4 +791,4 @@ def doprofiling():
     print("total time = ", total_time)
 
 
-# doprofiling()
+doprofiling()
