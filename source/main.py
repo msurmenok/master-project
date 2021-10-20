@@ -33,6 +33,7 @@ from jsonPopulation import JSONPopulation
 
 def main(stop_time, it, algorithm, config, folder_results, folder_data):
     # Create topology from json
+    folder_data = '/' + folder_data
     topo = Topology()
     topology_json = json.load(open(os.path.dirname(__file__) + folder_data + "/netDefinition.json"))
     # topo.load(topology_json)
@@ -98,7 +99,7 @@ def initialize_experiment(config, iteration, folder_results, folder_data):
         config['scenario'] + '_' + str(iteration), str(finish_time), str(services_in_fog), str(services_in_cloud)))
 
     # Memetic Algorithm
-    num_creatures = 30
+    num_creatures = 50
     num_generations = 300
 
     # Memetic Algorithm without Local Search
