@@ -31,30 +31,30 @@ from jsonPopulation import JSONPopulation
 # folder_results = "results/"
 
 
-def main(stop_time, it, algorithm, config):
+def main(stop_time, it, algorithm, config, folder_results, folder_data):
     # Create topology from json
     topo = Topology()
-    topology_json = json.load(open(os.path.dirname(__file__) + "/data/netDefinition.json"))
+    topology_json = json.load(open(os.path.dirname(__file__) + folder_data + "/netDefinition.json"))
     # topo.load(topology_json)
     topo.load_all_node_attr(topology_json)
     # topo.write("data_net.gexf")
 
     # create applications
-    data_app = json.load(open(os.path.dirname(__file__) + "/data/appDefinition.json"))
+    data_app = json.load(open(os.path.dirname(__file__) + folder_data + "/appDefinition.json"))
     apps = create_applications_from_json(data_app)
 
     # load placement algorithm
-    placementJson = json.load(open(os.path.dirname(__file__) + "/data/allocDefinition" + algorithm + ".json"))
+    placementJson = json.load(open(os.path.dirname(__file__) + folder_data + "/allocDefinition" + algorithm + ".json"))
     placement = JSONPlacement(name="Placement", json=placementJson)
 
     # load population
-    dataPopulation = json.load(open(os.path.dirname(__file__) + "/data/usersDefinition.json"))
+    dataPopulation = json.load(open(os.path.dirname(__file__) + folder_data + "/usersDefinition.json"))
     pop = JSONPopulation(name="Statical", json=dataPopulation, iteration=it)
 
     # Routing algorithm
     # selectorPath = MinimunPath()
     selectorPath = DeviceSpeedAwareRouting()
-    folder_results = 'results/'
+    # folder_results = 'results/'
     s = Sim(topo, default_results_path=folder_results + "Results_%s_%s_%i_%i" % (
         algorithm, config['scenario'], stop_time, it))
 
@@ -71,10 +71,8 @@ def main(stop_time, it, algorithm, config):
     s.run(stop_time, show_progress_monitor=False)
 
 
-def initialize_experiment(config, iteration):
-    folder_results = 'results/current/results_' + config['scenario'] + '_' + str(iteration)
-    os.makedirs(folder_results, exist_ok=True)
-    sg = ExperimentSetup(config=config)
+def initialize_experiment(config, iteration, folder_results, folder_data):
+    sg = ExperimentSetup(config=config, folder_data=folder_data)
     sg.networkGeneration()
     sg.appGeneration()
     sg.userGeneration()
@@ -175,16 +173,20 @@ def run_simulation():
     print("Simulation Done!")
 
 
-
 def run_single_experiment(iteration, algorithms, config, simulationDuration):
-    initialize_experiment(config, iteration)
+    folder_results = 'results/current/results_' + config['scenario'] + '_' + str(iteration)
+    folder_data = 'data/' + 'data_' + config['scenario'] + '_' + str(iteration)
+    os.makedirs(folder_results, exist_ok=True)
+    os.makedirs(folder_data, exist_ok=True)
+    initialize_experiment(config, iteration, folder_results, folder_data)
     for algorithm in algorithms:
         random.seed(iteration)
         np.random.seed(iteration)
         logging.info("Running experiment type: %s iteration: %i" % (config['scenario'], iteration))
 
         s_time = time.time()
-        main(stop_time=simulationDuration, it=iteration, algorithm=algorithm, config=config)
+        main(stop_time=simulationDuration, it=iteration, algorithm=algorithm, config=config, folder_results=folder_results,
+             folder_data=folder_data)
         print("%s algorithm, %d iteration is done" % (algorithm, iteration))
         print("\n--- %s seconds ---" % (time.time() - s_time))
 

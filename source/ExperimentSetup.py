@@ -19,16 +19,16 @@ from memetic_experimental3 import memetic_experimental3
 
 class ExperimentSetup:
 
-    def __init__(self, config):
+    def __init__(self, config, folder_data):
         self.graphicTerminal = False
         self.verbose_log = False
-        self.resultFolder = 'data'
+        self.resultFolder = folder_data
 
         try:
             os.stat(self.resultFolder)
         except:
             os.mkdir(self.resultFolder)
-
+        os.makedirs(folder_data + '/plots', exist_ok=True)
         # CLOUD
         # CPU | MEM | DISK | TIME
         self.CLOUDSPEED = 10000  # INSTR x MS
@@ -544,8 +544,8 @@ class ExperimentSetup:
         # calling Memetic algorithm
 
         placement = memetic_experimental(num_creatures, num_generations, services_requirements,
-                                                      hosts_resources,
-                                                      self.MAX_PRIORITY, self.DISTANCE_TO_CLOUD)
+                                         hosts_resources,
+                                         self.MAX_PRIORITY, self.DISTANCE_TO_CLOUD)
         print("memetic placement: ", placement)
 
         # convert placement indexes to devices id and save initial placement as json
@@ -621,8 +621,8 @@ class ExperimentSetup:
         # calling Memetic algorithm
 
         placement = memetic_experimental2(num_creatures, num_generations, services_requirements,
-                                         hosts_resources,
-                                         self.MAX_PRIORITY, self.DISTANCE_TO_CLOUD)
+                                          hosts_resources,
+                                          self.MAX_PRIORITY, self.DISTANCE_TO_CLOUD)
         print("memetic placement: ", placement)
 
         # convert placement indexes to devices id and save initial placement as json
