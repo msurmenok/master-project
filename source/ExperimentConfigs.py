@@ -17,6 +17,6 @@ configs = [
     },
     {
         'scenario': 'verylarge',
-        'iterations': 10
+        'iterations': 5
     }
 ]

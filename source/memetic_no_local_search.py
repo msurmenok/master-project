@@ -136,8 +136,8 @@ def fitness(individual, services, hosts, user_to_host_distance, distance_to_clou
     for i in range(len(individual)):
         if not np.isnan(individual[i]):
             f4 += user_to_host_distance[i][int(individual[i])]
-        else:
-            f4 += distance_to_cloud
+        # else:
+        #     f4 += distance_to_cloud
 
     # MIN, F5
     # Active Hosts Minimization

@@ -13,6 +13,8 @@ import copy
 from memetic import memetic_algorithm
 from memetic_no_local_search import memetic_algorithm_no_local_search
 from memetic_experimental import memetic_experimental
+from memetic_experimental2 import memetic_experimental2
+from memetic_experimental3 import memetic_experimental3
 
 
 class ExperimentSetup:
@@ -73,7 +75,7 @@ class ExperimentSetup:
         self.MAX_PRIORITY = 1
         self.func_SERVICE_PRIORITY = lambda: random.randint(0, self.MAX_PRIORITY)
         # TODO: change back after the experiment
-        self.func_APPDEADLINE = lambda: random.randint(10000, 20000)  # MS
+        self.func_APPDEADLINE = lambda: random.randint(5000, 20000)  # MS
         # self.func_APPDEADLINE = lambda: random.randint(300, 500000)  # MS
 
         # Users and IoT devices
@@ -95,28 +97,28 @@ class ExperimentSetup:
     def loadConfigurations(self, config):
         scenario = config['scenario']
         if scenario == 'tiny':
-            self.NUM_FOG_NODES = 20
-            self.TOTAL_APPS_NUMBER = 5
-            self.NUM_GW_DEVICES = round(
-                self.NUM_FOG_NODES * self.PERCENTAGE_OF_GATEWAYS / (1 - self.PERCENTAGE_OF_GATEWAYS))
-        if scenario == 'small':
-            self.NUM_FOG_NODES = 50
+            self.NUM_FOG_NODES = 5
             self.TOTAL_APPS_NUMBER = 10
             self.NUM_GW_DEVICES = round(
                 self.NUM_FOG_NODES * self.PERCENTAGE_OF_GATEWAYS / (1 - self.PERCENTAGE_OF_GATEWAYS))
+        if scenario == 'small':
+            self.NUM_FOG_NODES = 20
+            self.TOTAL_APPS_NUMBER = 50
+            self.NUM_GW_DEVICES = round(
+                self.NUM_FOG_NODES * self.PERCENTAGE_OF_GATEWAYS / (1 - self.PERCENTAGE_OF_GATEWAYS))
         if scenario == 'medium':
-            self.NUM_FOG_NODES = 50
-            self.TOTAL_APPS_NUMBER = 20
+            self.NUM_FOG_NODES = 40
+            self.TOTAL_APPS_NUMBER = 100
             self.NUM_GW_DEVICES = round(
                 self.NUM_FOG_NODES * self.PERCENTAGE_OF_GATEWAYS / (1 - self.PERCENTAGE_OF_GATEWAYS))
         if scenario == 'large':
             self.NUM_FOG_NODES = 100
-            self.TOTAL_APPS_NUMBER = 40
+            self.TOTAL_APPS_NUMBER = 250
             self.NUM_GW_DEVICES = round(
                 self.NUM_FOG_NODES * self.PERCENTAGE_OF_GATEWAYS / (1 - self.PERCENTAGE_OF_GATEWAYS))
         if scenario == 'verylarge':
-            self.NUM_FOG_NODES = 150
-            self.TOTAL_APPS_NUMBER = 100
+            self.NUM_FOG_NODES = 200
+            self.TOTAL_APPS_NUMBER = 800
             self.NUM_GW_DEVICES = round(
                 self.NUM_FOG_NODES * self.PERCENTAGE_OF_GATEWAYS / (1 - self.PERCENTAGE_OF_GATEWAYS))
 
@@ -448,23 +450,37 @@ class ExperimentSetup:
         self.myUsers = list()
 
         self.appsRequests = list()
+
+        # allocate each application exactly once
         for i in range(0, self.TOTAL_APPS_NUMBER):
             userRequestList = set()
             probOfRequested = self.func_REQUESTPROB()
             # probOfRequested = -1
             atLeastOneAllocated = False
-            for j in self.gatewaysDevices:
-                rand = random.random()
-                if rand < probOfRequested:
-                    myOneUser = {}
-                    myOneUser['app'] = str(i)
-                    myOneUser['message'] = "M.USER.APP." + str(i)
-                    myOneUser['id_resource'] = j
-                    myOneUser['lambda'] = self.func_USERREQRAT()
-                    userRequestList.add(j)
-                    self.myUsers.append(myOneUser)
-                    atLeastOneAllocated = True
-            if not atLeastOneAllocated:
+            # for j in self.gatewaysDevices:
+            #     rand = random.random()
+            #
+            #     if rand < probOfRequested:
+            #         myOneUser = {}
+            #         myOneUser['app'] = str(i)
+            #         myOneUser['message'] = "M.USER.APP." + str(i)
+            #         myOneUser['id_resource'] = j
+            #         myOneUser['lambda'] = self.func_USERREQRAT()
+            #         userRequestList.add(j)
+            #         self.myUsers.append(myOneUser)
+            #         atLeastOneAllocated = True
+            #         # break  # to allocate once for each service
+            # if not atLeastOneAllocated:
+            #     j = random.randint(0, len(self.gatewaysDevices) - 1)
+            #     myOneUser = {}
+            #     myOneUser['app'] = str(i)
+            #     myOneUser['message'] = "M.USER.APP." + str(i)
+            #     myOneUser['id_resource'] = list(self.gatewaysDevices)[j]  # Random GW to host the request
+            #     myOneUser['lambda'] = self.func_USERREQRAT()
+            #     userRequestList.add(list(self.gatewaysDevices)[j])
+            #     self.myUsers.append(myOneUser)
+
+            while not atLeastOneAllocated:
                 j = random.randint(0, len(self.gatewaysDevices) - 1)
                 myOneUser = {}
                 myOneUser['app'] = str(i)
@@ -473,6 +489,7 @@ class ExperimentSetup:
                 myOneUser['lambda'] = self.func_USERREQRAT()
                 userRequestList.add(list(self.gatewaysDevices)[j])
                 self.myUsers.append(myOneUser)
+                atLeastOneAllocated = True
             self.appsRequests.append(userRequestList)
 
         userJson['sources'] = self.myUsers
@@ -556,6 +573,160 @@ class ExperimentSetup:
         allocationFile.write(json.dumps(allAlloc))
         allocationFile.close()
         print("Memetic experimental initial allocation performed!")
+        return (servicesInFog, servicesInCloud)
+
+    def memeticExperimentalPlacement2(self, num_creatures, num_generations):
+        index_to_fogid = {}
+        index_to_module_app = {}
+
+        hosts_resources = list()  # numpy array to store host resources and coordinates
+        services_requirements = list()  # numpy array to store service requirements, priority, and coordinates
+
+        # make a numpy array of fog resources excluding gateway devices
+        # map index to fog device id
+        index = 0
+
+        for k, v in self.nodeResources.items():
+            if k not in self.gatewaysDevices and k is not self.cloudId:
+                index_to_fogid[index] = k
+                index += 1
+                # Build numpy array: CPU | MEM | DISK | TIME
+                cpu = v['CPU']
+                ram = v['RAM']
+                storage = v['STORAGE']
+                time_availability = v['TIME']
+                x = v['x']
+                y = v['y']
+                hosts_resources.append(np.array([cpu, ram, storage, time_availability, x, y]))
+        hosts_resources = np.stack(hosts_resources)
+
+        index = 0
+        for app_num, app in enumerate(self.appsRequests):
+            for instance, gw_id in enumerate(self.appsRequests[app_num]):
+                for module in list(self.apps[app_num].nodes):
+                    # add mapping id to (app id, module id)
+                    index_to_module_app[index] = (app_num, module)
+                    index += 1
+                    # Build numpy array: CPU | RAM | STORAGE | PRIORITY | X | Y
+                    res_required = self.servicesResources[module]
+                    cpu = res_required['CPU']
+                    ram = res_required['RAM']
+                    storage = res_required['STORAGE']
+                    priority = res_required['PRIORITY']
+                    x = self.nodeResources[gw_id]['x']
+                    y = self.nodeResources[gw_id]['y']
+                    services_requirements.append(np.array([cpu, ram, storage, priority, x, y]))
+        services_requirements = np.stack(services_requirements)
+
+        # calling Memetic algorithm
+
+        placement = memetic_experimental2(num_creatures, num_generations, services_requirements,
+                                         hosts_resources,
+                                         self.MAX_PRIORITY, self.DISTANCE_TO_CLOUD)
+        print("memetic placement: ", placement)
+
+        # convert placement indexes to devices id and save initial placement as json
+        servicesInFog = 0
+        servicesInCloud = 0
+        allAlloc = {}
+        myAllocationList = list()
+
+        for i in range(placement.size):
+            app_id, module = index_to_module_app[i]
+            resource_id = self.cloudId  # default value if placement is nan
+            if np.isnan(placement[i]):
+                servicesInCloud += 1
+            else:
+                resource_id = index_to_fogid[int(placement[i])]
+                servicesInFog += 1
+            myAllocation = {}
+            myAllocation['app'] = self.mapService2App[module]
+            myAllocation['module_name'] = self.mapServiceId2ServiceName[module]
+            myAllocation['id_resource'] = resource_id
+            myAllocationList.append(myAllocation)
+
+        allAlloc['initialAllocation'] = myAllocationList
+        allocationFile = open(self.resultFolder + "/allocDefinitionMemeticExperimental2.json", "w")
+        allocationFile.write(json.dumps(allAlloc))
+        allocationFile.close()
+        print("Memetic experimental 2 initial allocation performed!")
+        return (servicesInFog, servicesInCloud)
+
+    def memeticExperimentalPlacement3(self, num_creatures, num_generations):
+        index_to_fogid = {}
+        index_to_module_app = {}
+
+        hosts_resources = list()  # numpy array to store host resources and coordinates
+        services_requirements = list()  # numpy array to store service requirements, priority, and coordinates
+
+        # make a numpy array of fog resources excluding gateway devices
+        # map index to fog device id
+        index = 0
+
+        for k, v in self.nodeResources.items():
+            if k not in self.gatewaysDevices and k is not self.cloudId:
+                index_to_fogid[index] = k
+                index += 1
+                # Build numpy array: CPU | MEM | DISK | TIME
+                cpu = v['CPU']
+                ram = v['RAM']
+                storage = v['STORAGE']
+                time_availability = v['TIME']
+                x = v['x']
+                y = v['y']
+                hosts_resources.append(np.array([cpu, ram, storage, time_availability, x, y]))
+        hosts_resources = np.stack(hosts_resources)
+
+        index = 0
+        for app_num, app in enumerate(self.appsRequests):
+            for instance, gw_id in enumerate(self.appsRequests[app_num]):
+                for module in list(self.apps[app_num].nodes):
+                    # add mapping id to (app id, module id)
+                    index_to_module_app[index] = (app_num, module)
+                    index += 1
+                    # Build numpy array: CPU | RAM | STORAGE | PRIORITY | X | Y
+                    res_required = self.servicesResources[module]
+                    cpu = res_required['CPU']
+                    ram = res_required['RAM']
+                    storage = res_required['STORAGE']
+                    priority = res_required['PRIORITY']
+                    x = self.nodeResources[gw_id]['x']
+                    y = self.nodeResources[gw_id]['y']
+                    services_requirements.append(np.array([cpu, ram, storage, priority, x, y]))
+        services_requirements = np.stack(services_requirements)
+
+        # calling Memetic algorithm
+
+        placement = memetic_experimental3(num_creatures, num_generations, services_requirements,
+                                          hosts_resources,
+                                          self.MAX_PRIORITY, self.DISTANCE_TO_CLOUD)
+        print("memetic placement: ", placement)
+
+        # convert placement indexes to devices id and save initial placement as json
+        servicesInFog = 0
+        servicesInCloud = 0
+        allAlloc = {}
+        myAllocationList = list()
+
+        for i in range(placement.size):
+            app_id, module = index_to_module_app[i]
+            resource_id = self.cloudId  # default value if placement is nan
+            if np.isnan(placement[i]):
+                servicesInCloud += 1
+            else:
+                resource_id = index_to_fogid[int(placement[i])]
+                servicesInFog += 1
+            myAllocation = {}
+            myAllocation['app'] = self.mapService2App[module]
+            myAllocation['module_name'] = self.mapServiceId2ServiceName[module]
+            myAllocation['id_resource'] = resource_id
+            myAllocationList.append(myAllocation)
+
+        allAlloc['initialAllocation'] = myAllocationList
+        allocationFile = open(self.resultFolder + "/allocDefinitionMemeticExperimental3.json", "w")
+        allocationFile.write(json.dumps(allAlloc))
+        allocationFile.close()
+        print("Memetic experimental 3 initial allocation performed!")
         return (servicesInFog, servicesInCloud)
 
     def memeticWithoutLocalSearchPlacement(self, num_creatures, num_generations):
