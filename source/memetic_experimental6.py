@@ -419,7 +419,7 @@ def population_evolution(P, Q, objectives_functions_P, objectives_functions_Q, f
     return P
 
 
-def memetic_experimental2(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY, distance_to_cloud):
+def memetic_experimental6(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY, distance_to_cloud):
     num_services = len(services)
     num_hosts = len(hosts)
     num_objective_functions = 5
@@ -490,6 +490,7 @@ def memetic_experimental2(num_creatures, NUM_GENERATIONS, services, hosts, MAX_P
     objectives_functions_Q = np.zeros((num_creatures, num_objective_functions))
     fronts_Q = []
 
+    lc_frequency = 2
     generation = 0
     while (generation < NUM_GENERATIONS):
         generation += 1
@@ -510,7 +511,8 @@ def memetic_experimental2(num_creatures, NUM_GENERATIONS, services, hosts, MAX_P
             Q[i] = result[0]
             utilization_Q[i] = result[1]
 
-        Q, utilization_Q = local_search(Q, utilization_Q, hosts, services, num_creatures, num_hosts, num_services, service_to_closest_host)
+        if generation % lc_frequency == 0:
+            Q, utilization_Q = local_search(Q, utilization_Q, hosts, services, num_creatures, num_hosts, num_services, service_to_closest_host)
 
         # calculate the cost of each objective function for each solution
         for i in range(num_creatures):
@@ -760,7 +762,7 @@ def test_memetic():
     # num_services = 3
     # num_hosts = 5  # number of hosts may be different if we add extra during repair
     MAX_PRIORITY = 1  # max priority can be 0 or 1
-    placement = memetic_experimental2(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY, 18200)
+    placement = memetic_experimental6(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY, 18200)
     # print("Best placement: ", placement)
 
 

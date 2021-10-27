@@ -136,8 +136,8 @@ def fitness(individual, services, hosts, user_to_host_distance, distance_to_clou
     for i in range(len(individual)):
         if not np.isnan(individual[i]):
             f4 += user_to_host_distance[i][int(individual[i])]
-        else:
-            f4 += distance_to_cloud
+        # else:
+        #     f4 += distance_to_cloud
 
     # MIN, F5
     # Active Hosts Minimization
@@ -419,7 +419,7 @@ def population_evolution(P, Q, objectives_functions_P, objectives_functions_Q, f
     return P
 
 
-def memetic_experimental2(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY, distance_to_cloud):
+def memetic_experimental5(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY, distance_to_cloud):
     num_services = len(services)
     num_hosts = len(hosts)
     num_objective_functions = 5
@@ -760,7 +760,7 @@ def test_memetic():
     # num_services = 3
     # num_hosts = 5  # number of hosts may be different if we add extra during repair
     MAX_PRIORITY = 1  # max priority can be 0 or 1
-    placement = memetic_experimental2(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY, 18200)
+    placement = memetic_experimental5(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY, 18200)
     # print("Best placement: ", placement)
 
 

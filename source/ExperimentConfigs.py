@@ -1,22 +1,22 @@
 configs = [
     {
         'scenario': 'tiny',
-        'iterations': 10
+        'iterations': 16
     },
     {
         'scenario': 'small',
-        'iterations': 10
+        'iterations': 16
     },
     {
         'scenario': 'medium',
-        'iterations': 10
+        'iterations': 16
     },
     {
         'scenario': 'large',
-        'iterations': 10
+        'iterations': 8
     },
-    {
-        'scenario': 'verylarge',
-        'iterations': 5
-    }
+    # {
+    #     'scenario': 'verylarge',
+    #     'iterations': 5
+    # }
 ]
