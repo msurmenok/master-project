@@ -1,6 +1,8 @@
 import os
 
 import pandas as pd
+import numpy as np
+from matplotlib import pyplot as plt
 
 from ExperimentConfigs import configs
 
@@ -20,27 +22,27 @@ for config in configs:
     simulation_time = 100000
 
     # to calculate average of time latency over all experiments for this scenario
-    ff_ram_all_experiments_avg_latency = 0
-    ff_time_all_experiments_avg_latency = 0
-    memetic_no_local_search_all_experiments_avg_latency = 0
-    memetic_experemental_all_experiments_avg_latency = 0
-    memetic_experemental2_all_experiments_avg_latency = 0
-    memetic_experemental3_all_experiments_avg_latency = 0
-    memetic_experemental4_all_experiments_avg_latency = 0
-    memetic_experemental5_all_experiments_avg_latency = 0
-    memetic_experemental6_all_experiments_avg_latency = 0
-    memetic_all_experiments_avg_latency = 0
+    ff_ram_all_experiments_avg_latency = []
+    ff_time_all_experiments_avg_latency = []
+    memetic_no_local_search_all_experiments_avg_latency = []
+    memetic_experemental_all_experiments_avg_latency = []
+    memetic_experemental2_all_experiments_avg_latency = []
+    memetic_experemental3_all_experiments_avg_latency = []
+    memetic_experemental4_all_experiments_avg_latency = []
+    memetic_experemental5_all_experiments_avg_latency = []
+    memetic_experemental6_all_experiments_avg_latency = []
+    memetic_all_experiments_avg_latency = []
 
-    ff_ram_all_experiments_avg_totalresponse = 0
-    ff_time_all_experiments_avg_totalresponse = 0
-    memetic_no_local_search_all_experiments_avg_totalresponse = 0
-    memetic_experemental_all_experiments_avg_totalresponse = 0
-    memetic_experemental2_all_experiments_avg_totalresponse = 0
-    memetic_experemental3_all_experiments_avg_totalresponse = 0
-    memetic_experemental4_all_experiments_avg_totalresponse = 0
-    memetic_experemental5_all_experiments_avg_totalresponse = 0
-    memetic_experemental6_all_experiments_avg_totalresponse = 0
-    memetic_all_experiments_avg_totalresponse = 0
+    ff_ram_all_experiments_avg_totalresponse = []
+    ff_time_all_experiments_avg_totalresponse = []
+    memetic_no_local_search_all_experiments_avg_totalresponse = []
+    memetic_experemental_all_experiments_avg_totalresponse = []
+    memetic_experemental2_all_experiments_avg_totalresponse = []
+    memetic_experemental3_all_experiments_avg_totalresponse = []
+    memetic_experemental4_all_experiments_avg_totalresponse = []
+    memetic_experemental5_all_experiments_avg_totalresponse = []
+    memetic_experemental6_all_experiments_avg_totalresponse = []
+    memetic_all_experiments_avg_totalresponse = []
 
     ff_ram_num_requests = 0
     ff_time_num_requests = 0
@@ -86,7 +88,7 @@ for config in configs:
         'scenario,# experiment,algorithm,mean latency,min latency,max latency,average total response,num requests\n')
     file_averages = open(results_analysis_average_file, 'a+')
     file_averages.write(
-        'scenario,# experiments,algorithm,average latency,average total response,average num requests,average calculation time,average num services on fog\n')
+        'scenario,# experiments,algorithm,average average latency, median average latency, 75 perc average latency, average average total response, median average total response, 75 perc average total response, average num requests,average calculation time,average num services on fog\n')
 
     for i in range(num_of_experiments):
         # calculate total time taken by each algorithm:
@@ -135,8 +137,8 @@ for config in configs:
                 config['scenario'], i, config['scenario'], simulation_time, i))
         compute_times_df(df_firstfit_ram)
 
-        ff_ram_all_experiments_avg_latency += df_firstfit_ram["time_latency"].mean()
-        ff_ram_all_experiments_avg_totalresponse += df_firstfit_ram["time_total_response"].mean()
+        ff_ram_all_experiments_avg_latency.append(df_firstfit_ram["time_latency"].mean())
+        ff_ram_all_experiments_avg_totalresponse.append(df_firstfit_ram["time_total_response"].mean())
         ff_ram_num_requests += len(df_firstfit_ram)
 
         print("FF RAM number of tasks processed: %d" % len(df_firstfit_ram))
@@ -157,8 +159,8 @@ for config in configs:
             (results_folder + "/results_%s_%dResults_FirstFitTime_%s_%d_%d.csv") % (
                 config['scenario'], i, config['scenario'], simulation_time, i))
         compute_times_df(df_firstfit_time)
-        ff_time_all_experiments_avg_latency += df_firstfit_time["time_latency"].mean()
-        ff_time_all_experiments_avg_totalresponse += df_firstfit_time["time_total_response"].mean()
+        ff_time_all_experiments_avg_latency.append(df_firstfit_time["time_latency"].mean())
+        ff_time_all_experiments_avg_totalresponse.append(df_firstfit_time["time_total_response"].mean())
         ff_time_num_requests += len(df_firstfit_time)
 
         print("FF Time number of tasks processed: %d" % len(df_firstfit_time))
@@ -181,9 +183,9 @@ for config in configs:
                 config['scenario'], i, config['scenario'], simulation_time, i))
         compute_times_df(df_memetic_no_local_search)
 
-        memetic_no_local_search_all_experiments_avg_latency += df_memetic_no_local_search["time_latency"].mean()
-        memetic_no_local_search_all_experiments_avg_totalresponse += df_memetic_no_local_search[
-            "time_total_response"].mean()
+        memetic_no_local_search_all_experiments_avg_latency.append(df_memetic_no_local_search["time_latency"].mean())
+        memetic_no_local_search_all_experiments_avg_totalresponse.append(df_memetic_no_local_search[
+                                                                             "time_total_response"].mean())
         memetic_no_local_search_num_requests += len(df_memetic_no_local_search)
 
         print("Memetic w/o LC number of tasks processed: %d" % len(df_memetic_no_local_search))
@@ -207,8 +209,9 @@ for config in configs:
                 config['scenario'], i, config['scenario'], simulation_time, i))
         compute_times_df(df_memetic_experimental)
 
-        memetic_experemental_all_experiments_avg_latency += df_memetic_experimental["time_latency"].mean()
-        memetic_experemental_all_experiments_avg_totalresponse += df_memetic_experimental["time_total_response"].mean()
+        memetic_experemental_all_experiments_avg_latency.append(df_memetic_experimental["time_latency"].mean())
+        memetic_experemental_all_experiments_avg_totalresponse.append(
+            df_memetic_experimental["time_total_response"].mean())
         memetic_experemental_num_requests += len(df_memetic_experimental)
 
         print("Memetic Experimental number of tasks processed: %d" % len(df_memetic_experimental))
@@ -232,9 +235,9 @@ for config in configs:
                 config['scenario'], i, config['scenario'], simulation_time, i))
         compute_times_df(df_memetic_experimental2)
 
-        memetic_experemental2_all_experiments_avg_latency += df_memetic_experimental2["time_latency"].mean()
-        memetic_experemental2_all_experiments_avg_totalresponse += df_memetic_experimental2[
-            "time_total_response"].mean()
+        memetic_experemental2_all_experiments_avg_latency.append(df_memetic_experimental2["time_latency"].mean())
+        memetic_experemental2_all_experiments_avg_totalresponse.append(df_memetic_experimental2[
+                                                                           "time_total_response"].mean())
         memetic_experemental2_num_requests += len(df_memetic_experimental2)
 
         print("Memetic Experimental 2 number of tasks processed: %d" % len(df_memetic_experimental2))
@@ -258,9 +261,9 @@ for config in configs:
                 config['scenario'], i, config['scenario'], simulation_time, i))
         compute_times_df(df_memetic_experimental3)
 
-        memetic_experemental3_all_experiments_avg_latency += df_memetic_experimental3["time_latency"].mean()
-        memetic_experemental3_all_experiments_avg_totalresponse += df_memetic_experimental3[
-            "time_total_response"].mean()
+        memetic_experemental3_all_experiments_avg_latency.append(df_memetic_experimental3["time_latency"].mean())
+        memetic_experemental3_all_experiments_avg_totalresponse.append(df_memetic_experimental3[
+                                                                           "time_total_response"].mean())
         memetic_experemental3_num_requests += len(df_memetic_experimental3)
 
         print("Memetic Experimental 3 number of tasks processed: %d" % len(df_memetic_experimental3))
@@ -284,9 +287,9 @@ for config in configs:
                 config['scenario'], i, config['scenario'], simulation_time, i))
         compute_times_df(df_memetic_experimental4)
 
-        memetic_experemental4_all_experiments_avg_latency += df_memetic_experimental4["time_latency"].mean()
-        memetic_experemental4_all_experiments_avg_totalresponse += df_memetic_experimental4[
-            "time_total_response"].mean()
+        memetic_experemental4_all_experiments_avg_latency.append(df_memetic_experimental4["time_latency"].mean())
+        memetic_experemental4_all_experiments_avg_totalresponse.append(df_memetic_experimental4[
+                                                                           "time_total_response"].mean())
         memetic_experemental4_num_requests += len(df_memetic_experimental4)
 
         print("Memetic Experimental 4 number of tasks processed: %d" % len(df_memetic_experimental4))
@@ -310,9 +313,9 @@ for config in configs:
                 config['scenario'], i, config['scenario'], simulation_time, i))
         compute_times_df(df_memetic_experimental5)
 
-        memetic_experemental5_all_experiments_avg_latency += df_memetic_experimental5["time_latency"].mean()
-        memetic_experemental5_all_experiments_avg_totalresponse += df_memetic_experimental5[
-            "time_total_response"].mean()
+        memetic_experemental5_all_experiments_avg_latency.append(df_memetic_experimental5["time_latency"].mean())
+        memetic_experemental5_all_experiments_avg_totalresponse.append(df_memetic_experimental5[
+                                                                           "time_total_response"].mean())
         memetic_experemental5_num_requests += len(df_memetic_experimental5)
 
         print("Memetic Experimental 5 number of tasks processed: %d" % len(df_memetic_experimental5))
@@ -336,9 +339,9 @@ for config in configs:
                 config['scenario'], i, config['scenario'], simulation_time, i))
         compute_times_df(df_memetic_experimental6)
 
-        memetic_experemental6_all_experiments_avg_latency += df_memetic_experimental6["time_latency"].mean()
-        memetic_experemental6_all_experiments_avg_totalresponse += df_memetic_experimental6[
-            "time_total_response"].mean()
+        memetic_experemental6_all_experiments_avg_latency.append(df_memetic_experimental6["time_latency"].mean())
+        memetic_experemental6_all_experiments_avg_totalresponse.append(df_memetic_experimental6[
+                                                                           "time_total_response"].mean())
         memetic_experemental6_num_requests += len(df_memetic_experimental6)
 
         print("Memetic Experimental 6 number of tasks processed: %d" % len(df_memetic_experimental6))
@@ -356,15 +359,14 @@ for config in configs:
             df_memetic_experimental6["time_latency"].max(), df_memetic_experimental6["time_total_response"].mean(),
             len(df_memetic_experimental6)))
 
-
         # Memetic (with local search)
         df_memetic = pd.read_csv(
             (results_folder + "/results_%s_%dResults_Memetic_%s_%d_%d.csv") % (
                 config['scenario'], i, config['scenario'], simulation_time, i))
         compute_times_df(df_memetic)
 
-        memetic_all_experiments_avg_latency += df_memetic["time_latency"].mean()
-        memetic_all_experiments_avg_totalresponse += df_memetic["time_total_response"].mean()
+        memetic_all_experiments_avg_latency.append(df_memetic["time_latency"].mean())
+        memetic_all_experiments_avg_totalresponse.append(df_memetic["time_total_response"].mean())
         memetic_num_requests += len(df_memetic)
 
         print("Memetic number of tasks processed: %d" % len(df_memetic))
@@ -380,153 +382,357 @@ for config in configs:
             df_memetic["time_latency"].max(), df_memetic["time_total_response"].mean(), len(df_memetic)))
 
     print("=============== %d experiments average =====================" % num_of_experiments)
+    plt.hist(ff_ram_all_experiments_avg_latency, bins=20)
+    plt.savefig(results_folder + 'histograms/' + config['scenario'] + '_latency_ff_ram.png')
+    plt.clf()
+
+    plt.hist(ff_ram_all_experiments_avg_totalresponse, bins=20)
+    plt.savefig(results_folder + 'histograms/' + config['scenario'] + '_totalresponse_ff_ram.png')
+    plt.clf()
+
+    avg_avg_latency = float(np.mean(ff_ram_all_experiments_avg_latency))
+    p50_avg_latency = float(np.percentile(ff_ram_all_experiments_avg_latency, 50))
+    p75_avg_latency = float(np.percentile(ff_ram_all_experiments_avg_latency, 75))
+
+    avg_avg_totalresponse = float(np.mean(ff_ram_all_experiments_avg_totalresponse))
+    p50_avg_totalresponse = float(np.percentile(ff_ram_all_experiments_avg_totalresponse, 50))
+    p75_avg_totalresponse = float(np.percentile(ff_ram_all_experiments_avg_totalresponse, 75))
+
     print("first fit ram avg latency (avg of %d experiments) = %f " % (
-        num_of_experiments, ff_ram_all_experiments_avg_latency / num_of_experiments))
+        num_of_experiments, avg_avg_latency))
     print("first fit ram avg total response time (avg of %d experiments) = %f " % (
-        num_of_experiments, ff_ram_all_experiments_avg_totalresponse / num_of_experiments))
+        num_of_experiments, avg_avg_totalresponse))
     print("first fit ram avg num of requests (avg of %d experiments) = %f " % (
         num_of_experiments, ff_ram_num_requests / num_of_experiments))
 
-    file_averages.write('%s,%d,FF RAM,%f,%f,%f,%f,%f\n' % (
-        config['scenario'], num_of_experiments, ff_ram_all_experiments_avg_latency / num_of_experiments,
-        ff_ram_all_experiments_avg_totalresponse / num_of_experiments, ff_ram_num_requests / num_of_experiments,
+    file_averages.write('%s,%d,FF RAM,%f,%f,%f,%f,%f,%f,%f,%f,%f\n' % (
+        config['scenario'], num_of_experiments,
+        avg_avg_latency,
+        p50_avg_latency,
+        p75_avg_latency,
+        avg_avg_totalresponse,
+        p50_avg_totalresponse,
+        p75_avg_totalresponse,
+        ff_ram_num_requests / num_of_experiments,
         ff_ram_calculation_time / num_of_experiments, ff_ram_services_on_fog / num_of_experiments))
 
     # first fit time averages
+    plt.hist(ff_time_all_experiments_avg_latency, bins=20)
+    plt.savefig(results_folder + 'histograms/' + config['scenario'] + '_latency_ff_time.png')
+    plt.clf()
+
+    plt.hist(ff_time_all_experiments_avg_totalresponse, bins=20)
+    plt.savefig(results_folder + 'histograms/' + config['scenario'] + '_totalresponse_ff_time.png')
+    plt.clf()
+
+    avg_avg_latency = float(np.mean(ff_time_all_experiments_avg_latency))
+    p50_avg_latency = float(np.percentile(ff_time_all_experiments_avg_latency, 50))
+    p75_avg_latency = float(np.percentile(ff_time_all_experiments_avg_latency, 75))
+
+    avg_avg_totalresponse = float(np.mean(ff_time_all_experiments_avg_totalresponse))
+    p50_avg_totalresponse = float(np.percentile(ff_time_all_experiments_avg_totalresponse, 50))
+    p75_avg_totalresponse = float(np.percentile(ff_time_all_experiments_avg_totalresponse, 75))
+
     print("first fit time avg latency (avg of %d experiments) = %f " % (
-        num_of_experiments, ff_time_all_experiments_avg_latency / num_of_experiments))
+        num_of_experiments, avg_avg_latency))
     print("first fit time avg total response time (avg of %d experiments) = %f " % (
-        num_of_experiments, ff_time_all_experiments_avg_totalresponse / num_of_experiments))
+        num_of_experiments, avg_avg_totalresponse))
     print("first fit time avg num of requests (avg of %d experiments) = %f " % (
         num_of_experiments, ff_time_num_requests / num_of_experiments))
-    file_averages.write('%s,%d,FF TIME,%f,%f,%f,%f,%f\n' % (
-        config['scenario'], num_of_experiments, ff_time_all_experiments_avg_totalresponse / num_of_experiments,
-        ff_time_all_experiments_avg_totalresponse / num_of_experiments, ff_time_num_requests / num_of_experiments,
+    file_averages.write('%s,%d,FF TIME,%f,%f,%f,%f,%f,%f,%f,%f,%f\n' % (
+        config['scenario'], num_of_experiments,
+        avg_avg_latency,
+        p50_avg_latency,
+        p75_avg_latency,
+        avg_avg_totalresponse,
+        p50_avg_totalresponse,
+        p75_avg_totalresponse,
+        ff_time_num_requests / num_of_experiments,
         ff_time_calculation_time / num_of_experiments, ff_time_services_on_fog / num_of_experiments))
 
     # memetic w/o lc averages
+    plt.hist(memetic_no_local_search_all_experiments_avg_latency, bins=20)
+    plt.savefig(results_folder + 'histograms/' + config['scenario'] + '_latency_memetic_wo_lc.png')
+    plt.clf()
+
+    plt.hist(memetic_no_local_search_all_experiments_avg_totalresponse, bins=20)
+    plt.savefig(results_folder + 'histograms/' + config['scenario'] + '_totalresponse_memetic_wo_lc.png')
+    plt.clf()
+
+    avg_avg_latency = float(np.mean(memetic_no_local_search_all_experiments_avg_latency))
+    p50_avg_latency = float(np.percentile(memetic_no_local_search_all_experiments_avg_latency, 50))
+    p75_avg_latency = float(np.percentile(memetic_no_local_search_all_experiments_avg_latency, 75))
+
+    avg_avg_totalresponse = float(np.mean(memetic_no_local_search_all_experiments_avg_totalresponse))
+    p50_avg_totalresponse = float(np.percentile(memetic_no_local_search_all_experiments_avg_totalresponse, 50))
+    p75_avg_totalresponse = float(np.percentile(memetic_no_local_search_all_experiments_avg_totalresponse, 75))
+
     print("memetic without local search avg latency (avg of %d experiments) = %f" % (
-        num_of_experiments, memetic_no_local_search_all_experiments_avg_latency / num_of_experiments))
+        num_of_experiments, avg_avg_latency))
     print("memetic without local search avg total response time (avg of %d experiments) = %f" % (
-        num_of_experiments, memetic_no_local_search_all_experiments_avg_totalresponse / num_of_experiments))
+        num_of_experiments, avg_avg_totalresponse))
     print("memetic without local search avg num of requests (avg of %d experiments) = %f " % (
         num_of_experiments, memetic_no_local_search_num_requests / num_of_experiments))
 
-    file_averages.write('%s,%d,memetic w/o LC,%f,%f,%f,%f,%f\n' % (
+    file_averages.write('%s,%d,memetic w/o LC,%f,%f,%f,%f,%f,%f,%f,%f,%f\n' % (
         config['scenario'], num_of_experiments,
-        memetic_no_local_search_all_experiments_avg_latency / num_of_experiments,
-        memetic_no_local_search_all_experiments_avg_totalresponse / num_of_experiments,
+        avg_avg_latency,
+        p50_avg_latency,
+        p75_avg_latency,
+        avg_avg_totalresponse,
+        p50_avg_totalresponse,
+        p75_avg_totalresponse,
         memetic_no_local_search_num_requests / num_of_experiments,
         memetic_no_local_search_calculation_time / num_of_experiments,
         memetic_no_local_search_services_on_fog / num_of_experiments))
 
     # memetic experimental averages
+    plt.hist(memetic_experemental_all_experiments_avg_latency, bins=20)
+    plt.savefig(results_folder + 'histograms/' + config['scenario'] + '_latency_memetic_exp.png')
+    plt.clf()
+
+    plt.hist(memetic_experemental_all_experiments_avg_totalresponse, bins=20)
+    plt.savefig(results_folder + 'histograms/' + config['scenario'] + '_totalresponse_memetic_exp.png')
+    plt.clf()
+
+    avg_avg_latency = float(np.mean(memetic_experemental_all_experiments_avg_latency))
+    p50_avg_latency = float(np.percentile(memetic_experemental_all_experiments_avg_latency, 50))
+    p75_avg_latency = float(np.percentile(memetic_experemental_all_experiments_avg_latency, 75))
+
+    avg_avg_totalresponse = float(np.mean(memetic_experemental_all_experiments_avg_totalresponse))
+    p50_avg_totalresponse = float(np.percentile(memetic_experemental_all_experiments_avg_totalresponse, 50))
+    p75_avg_totalresponse = float(np.percentile(memetic_experemental_all_experiments_avg_totalresponse, 75))
+
     print("memetic experimental avg latency (avg of %d experiments) = %f" % (
-        num_of_experiments, memetic_experemental_all_experiments_avg_latency / num_of_experiments))
+        num_of_experiments, avg_avg_latency))
     print("memetic experimental avg total response time (avg of %d experiments) = %f" % (
-        num_of_experiments, memetic_experemental_all_experiments_avg_totalresponse / num_of_experiments))
+        num_of_experiments, avg_avg_totalresponse))
     print("memetic experimental avg num of requests (avg of %d experiments) = %f " % (
         num_of_experiments, memetic_experemental_num_requests / num_of_experiments))
 
-    file_averages.write('%s,%d,memetic exp 1,%f,%f,%f,%f,%f\n' % (
+    file_averages.write('%s,%d,memetic exp 1,%f,%f,%f,%f,%f,%f,%f,%f,%f\n' % (
         config['scenario'], num_of_experiments,
-        memetic_experemental_all_experiments_avg_latency / num_of_experiments,
-        memetic_experemental_all_experiments_avg_totalresponse / num_of_experiments,
+        avg_avg_latency,
+        p50_avg_latency,
+        p75_avg_latency,
+        avg_avg_totalresponse,
+        p50_avg_totalresponse,
+        p75_avg_totalresponse,
         memetic_experemental_num_requests / num_of_experiments,
         memetic_experimental_calculation_time / num_of_experiments,
         memetic_experimental_services_on_fog / num_of_experiments))
 
     # memetic experimental 2 averages
+    plt.hist(memetic_experemental2_all_experiments_avg_latency, bins=20)
+    plt.savefig(results_folder + 'histograms/' + config['scenario'] + '_latency_memetic_exp2.png')
+    plt.clf()
+
+    plt.hist(memetic_experemental2_all_experiments_avg_totalresponse, bins=20)
+    plt.savefig(results_folder + 'histograms/' + config['scenario'] + '_totalresponse_memetic_exp2.png')
+    plt.clf()
+
+    avg_avg_latency = float(np.mean(memetic_experemental2_all_experiments_avg_latency))
+    p50_avg_latency = float(np.percentile(memetic_experemental2_all_experiments_avg_latency, 50))
+    p75_avg_latency = float(np.percentile(memetic_experemental2_all_experiments_avg_latency, 75))
+
+    avg_avg_totalresponse = float(np.mean(memetic_experemental2_all_experiments_avg_totalresponse))
+    p50_avg_totalresponse = float(np.percentile(memetic_experemental2_all_experiments_avg_totalresponse, 50))
+    p75_avg_totalresponse = float(np.percentile(memetic_experemental2_all_experiments_avg_totalresponse, 75))
+
     print("memetic experimental 2 avg latency (avg of %d experiments) = %f" % (
-        num_of_experiments, memetic_experemental2_all_experiments_avg_latency / num_of_experiments))
+        num_of_experiments, avg_avg_latency))
     print("memetic experimental 2 avg total response time (avg of %d experiments) = %f" % (
-        num_of_experiments, memetic_experemental2_all_experiments_avg_totalresponse / num_of_experiments))
+        num_of_experiments, avg_avg_totalresponse))
     print("memetic experimental 2 avg num of requests (avg of %d experiments) = %f " % (
         num_of_experiments, memetic_experemental2_num_requests / num_of_experiments))
 
-    file_averages.write('%s,%d,memetic exp 2,%f,%f,%f,%f,%f\n' % (
+    file_averages.write('%s,%d,memetic exp 2,%f,%f,%f,%f,%f,%f,%f,%f,%f\n' % (
         config['scenario'], num_of_experiments,
-        memetic_experemental2_all_experiments_avg_latency / num_of_experiments,
-        memetic_experemental2_all_experiments_avg_totalresponse / num_of_experiments,
+        avg_avg_latency,
+        p50_avg_latency,
+        p75_avg_latency,
+        avg_avg_totalresponse,
+        p50_avg_totalresponse,
+        p75_avg_totalresponse,
         memetic_experemental2_num_requests / num_of_experiments,
         memetic_experimental2_calculation_time / num_of_experiments,
         memetic_experimental2_services_on_fog / num_of_experiments))
 
     # memetic experimental 3 averages
+    plt.hist(memetic_experemental3_all_experiments_avg_latency, bins=20)
+    plt.savefig(results_folder + 'histograms/' + config['scenario'] + '_latency_memetic_exp3.png')
+    plt.clf()
+
+    plt.hist(memetic_experemental3_all_experiments_avg_totalresponse, bins=20)
+    plt.savefig(results_folder + 'histograms/' + config['scenario'] + '_totalresponse_memetic_exp3.png')
+    plt.clf()
+
+    avg_avg_latency = float(np.mean(memetic_experemental3_all_experiments_avg_latency))
+    p50_avg_latency = float(np.percentile(memetic_experemental3_all_experiments_avg_latency, 50))
+    p75_avg_latency = float(np.percentile(memetic_experemental3_all_experiments_avg_latency, 75))
+
+    avg_avg_totalresponse = float(np.mean(memetic_experemental3_all_experiments_avg_totalresponse))
+    p50_avg_totalresponse = float(np.percentile(memetic_experemental3_all_experiments_avg_totalresponse, 50))
+    p75_avg_totalresponse = float(np.percentile(memetic_experemental3_all_experiments_avg_totalresponse, 75))
+
     print("memetic experimental 3 avg latency (avg of %d experiments) = %f" % (
-        num_of_experiments, memetic_experemental3_all_experiments_avg_latency / num_of_experiments))
+        num_of_experiments, avg_avg_latency))
     print("memetic experimental 3 avg total response time (avg of %d experiments) = %f" % (
-        num_of_experiments, memetic_experemental3_all_experiments_avg_totalresponse / num_of_experiments))
+        num_of_experiments, avg_avg_totalresponse))
     print("memetic experimental 3 avg num of requests (avg of %d experiments) = %f " % (
         num_of_experiments, memetic_experemental3_num_requests / num_of_experiments))
 
-    file_averages.write('%s,%d,memetic exp 3,%f,%f,%f,%f,%f\n' % (
+    file_averages.write('%s,%d,memetic exp 3,%f,%f,%f,%f,%f,%f,%f,%f,%f\n' % (
         config['scenario'], num_of_experiments,
-        memetic_experemental3_all_experiments_avg_latency / num_of_experiments,
-        memetic_experemental3_all_experiments_avg_totalresponse / num_of_experiments,
+        avg_avg_latency,
+        p50_avg_latency,
+        p75_avg_latency,
+        avg_avg_totalresponse,
+        p50_avg_totalresponse,
+        p75_avg_totalresponse,
         memetic_experemental3_num_requests / num_of_experiments,
         memetic_experimental3_calculation_time / num_of_experiments,
         memetic_experimental3_services_on_fog / num_of_experiments))
 
     # memetic experimental 4 averages
+    plt.hist(memetic_experemental4_all_experiments_avg_latency, bins=20)
+    plt.savefig(results_folder + 'histograms/' + config['scenario'] + '_latency_memetic_exp4.png')
+    plt.clf()
+
+    plt.hist(memetic_experemental4_all_experiments_avg_totalresponse, bins=20)
+    plt.savefig(results_folder + 'histograms/' + config['scenario'] + '_totalresponse_memetic_exp4.png')
+    plt.clf()
+
+    avg_avg_latency = float(np.mean(memetic_experemental4_all_experiments_avg_latency))
+    p50_avg_latency = float(np.percentile(memetic_experemental4_all_experiments_avg_latency, 50))
+    p75_avg_latency = float(np.percentile(memetic_experemental4_all_experiments_avg_latency, 75))
+
+    avg_avg_totalresponse = float(np.mean(memetic_experemental4_all_experiments_avg_totalresponse))
+    p50_avg_totalresponse = float(np.percentile(memetic_experemental4_all_experiments_avg_totalresponse, 50))
+    p75_avg_totalresponse = float(np.percentile(memetic_experemental4_all_experiments_avg_totalresponse, 75))
+
     print("memetic experimental 4 avg latency (avg of %d experiments) = %f" % (
-        num_of_experiments, memetic_experemental4_all_experiments_avg_latency / num_of_experiments))
+        num_of_experiments, avg_avg_latency))
     print("memetic experimental 4 avg total response time (avg of %d experiments) = %f" % (
-        num_of_experiments, memetic_experemental4_all_experiments_avg_totalresponse / num_of_experiments))
+        num_of_experiments, avg_avg_totalresponse))
     print("memetic experimental 4 avg num of requests (avg of %d experiments) = %f " % (
         num_of_experiments, memetic_experemental4_num_requests / num_of_experiments))
 
-    file_averages.write('%s,%d,memetic exp 4,%f,%f,%f,%f,%f\n' % (
+    file_averages.write('%s,%d,memetic exp 4,%f,%f,%f,%f,%f,%f,%f,%f,%f\n' % (
         config['scenario'], num_of_experiments,
-        memetic_experemental4_all_experiments_avg_latency / num_of_experiments,
-        memetic_experemental4_all_experiments_avg_totalresponse / num_of_experiments,
+        avg_avg_latency,
+        p50_avg_latency,
+        p75_avg_latency,
+        avg_avg_totalresponse,
+        p50_avg_totalresponse,
+        p75_avg_totalresponse,
         memetic_experemental4_num_requests / num_of_experiments,
         memetic_experimental4_calculation_time / num_of_experiments,
         memetic_experimental4_services_on_fog / num_of_experiments))
 
     # memetic experimental 5 averages
+    plt.hist(memetic_experemental5_all_experiments_avg_latency, bins=20)
+    plt.savefig(results_folder + 'histograms/' + config['scenario'] + '_latency_memetic_exp5.png')
+    plt.clf()
+
+    plt.hist(memetic_experemental5_all_experiments_avg_totalresponse, bins=20)
+    plt.savefig(results_folder + 'histograms/' + config['scenario'] + '_totalresponse_memetic_exp5.png')
+    plt.clf()
+
+    avg_avg_latency = float(np.mean(memetic_experemental5_all_experiments_avg_latency))
+    p50_avg_latency = float(np.percentile(memetic_experemental5_all_experiments_avg_latency, 50))
+    p75_avg_latency = float(np.percentile(memetic_experemental5_all_experiments_avg_latency, 75))
+
+    avg_avg_totalresponse = float(np.mean(memetic_experemental5_all_experiments_avg_totalresponse))
+    p50_avg_totalresponse = float(np.percentile(memetic_experemental5_all_experiments_avg_totalresponse, 50))
+    p75_avg_totalresponse = float(np.percentile(memetic_experemental5_all_experiments_avg_totalresponse, 75))
+
     print("memetic experimental 5 avg latency (avg of %d experiments) = %f" % (
-        num_of_experiments, memetic_experemental5_all_experiments_avg_latency / num_of_experiments))
+        num_of_experiments, avg_avg_latency))
     print("memetic experimental 5 avg total response time (avg of %d experiments) = %f" % (
-        num_of_experiments, memetic_experemental5_all_experiments_avg_totalresponse / num_of_experiments))
+        num_of_experiments, avg_avg_totalresponse))
     print("memetic experimental 5 avg num of requests (avg of %d experiments) = %f " % (
         num_of_experiments, memetic_experemental5_num_requests / num_of_experiments))
 
-    file_averages.write('%s,%d,memetic exp 5,%f,%f,%f,%f,%f\n' % (
+    file_averages.write('%s,%d,memetic exp 5,%f,%f,%f,%f,%f,%f,%f,%f,%f\n' % (
         config['scenario'], num_of_experiments,
-        memetic_experemental5_all_experiments_avg_latency / num_of_experiments,
-        memetic_experemental5_all_experiments_avg_totalresponse / num_of_experiments,
+        avg_avg_latency,
+        p50_avg_latency,
+        p75_avg_latency,
+        avg_avg_totalresponse,
+        p50_avg_totalresponse,
+        p75_avg_totalresponse,
         memetic_experemental5_num_requests / num_of_experiments,
         memetic_experimental5_calculation_time / num_of_experiments,
         memetic_experimental5_services_on_fog / num_of_experiments))
 
     # memetic experimental 6 averages
+    plt.hist(memetic_experemental6_all_experiments_avg_latency, bins=20)
+    plt.savefig(results_folder + 'histograms/' + config['scenario'] + '_latency_memetic_exp6.png')
+    plt.clf()
+
+    plt.hist(memetic_experemental6_all_experiments_avg_totalresponse, bins=20)
+    plt.savefig(results_folder + 'histograms/' + config['scenario'] + '_totalresponse_memetic_exp6.png')
+    plt.clf()
+
+    avg_avg_latency = float(np.mean(memetic_experemental6_all_experiments_avg_latency))
+    p50_avg_latency = float(np.percentile(memetic_experemental6_all_experiments_avg_latency, 50))
+    p75_avg_latency = float(np.percentile(memetic_experemental6_all_experiments_avg_latency, 75))
+
+    avg_avg_totalresponse = float(np.mean(memetic_experemental6_all_experiments_avg_totalresponse))
+    p50_avg_totalresponse = float(np.percentile(memetic_experemental6_all_experiments_avg_totalresponse, 50))
+    p75_avg_totalresponse = float(np.percentile(memetic_experemental6_all_experiments_avg_totalresponse, 75))
+
     print("memetic experimental 6 avg latency (avg of %d experiments) = %f" % (
-        num_of_experiments, memetic_experemental6_all_experiments_avg_latency / num_of_experiments))
+        num_of_experiments, avg_avg_latency))
     print("memetic experimental 6 avg total response time (avg of %d experiments) = %f" % (
-        num_of_experiments, memetic_experemental6_all_experiments_avg_totalresponse / num_of_experiments))
+        num_of_experiments, avg_avg_totalresponse))
     print("memetic experimental 6 avg num of requests (avg of %d experiments) = %f " % (
         num_of_experiments, memetic_experemental6_num_requests / num_of_experiments))
 
-    file_averages.write('%s,%d,memetic exp 6,%f,%f,%f,%f,%f\n' % (
+    file_averages.write('%s,%d,memetic exp 6,%f,%f,%f,%f,%f,%f,%f,%f,%f\n' % (
         config['scenario'], num_of_experiments,
-        memetic_experemental6_all_experiments_avg_latency / num_of_experiments,
-        memetic_experemental6_all_experiments_avg_totalresponse / num_of_experiments,
+        avg_avg_latency,
+        p50_avg_latency,
+        p75_avg_latency,
+        avg_avg_totalresponse,
+        p50_avg_totalresponse,
+        p75_avg_totalresponse,
         memetic_experemental6_num_requests / num_of_experiments,
         memetic_experimental6_calculation_time / num_of_experiments,
         memetic_experimental6_services_on_fog / num_of_experiments))
 
     # memetic baseline averages
+    plt.hist(memetic_all_experiments_avg_latency, bins=20)
+    plt.savefig(results_folder + 'histograms/' + config['scenario'] + '_latency_memetic.png')
+    plt.clf()
+
+    plt.hist(memetic_all_experiments_avg_totalresponse, bins=20)
+    plt.savefig(results_folder + 'histograms/' + config['scenario'] + '_totalresponse_memetic.png')
+    plt.clf()
+
+    avg_avg_latency = float(np.mean(memetic_all_experiments_avg_latency))
+    p50_avg_latency = float(np.percentile(memetic_all_experiments_avg_latency, 50))
+    p75_avg_latency = float(np.percentile(memetic_all_experiments_avg_latency, 75))
+
+    avg_avg_totalresponse = float(np.mean(memetic_all_experiments_avg_totalresponse))
+    p50_avg_totalresponse = float(np.percentile(memetic_all_experiments_avg_totalresponse, 50))
+    p75_avg_totalresponse = float(np.percentile(memetic_all_experiments_avg_totalresponse, 75))
+
     print("memetic avg latency (avg of %d experiments) = %f" % (
-        num_of_experiments, memetic_all_experiments_avg_latency / num_of_experiments))
+        num_of_experiments, avg_avg_latency))
     print("memetic avg total response time (avg of %d experiments) = %f" % (
-        num_of_experiments, memetic_all_experiments_avg_totalresponse / num_of_experiments))
+        num_of_experiments, avg_avg_totalresponse))
     print("memetic avg num of requests (avg of %d experiments) = %f " % (
         num_of_experiments, memetic_num_requests / num_of_experiments))
-    file_averages.write('%s,%d,memetic,%f,%f,%f,%f,%f\n' % (
+    file_averages.write('%s,%d,memetic,%f,%f,%f,%f,%f,%f,%f,%f,%f\n' % (
         config['scenario'], num_of_experiments,
-        memetic_all_experiments_avg_latency / num_of_experiments,
-        memetic_all_experiments_avg_totalresponse / num_of_experiments,
+        avg_avg_latency,
+        p50_avg_latency,
+        p75_avg_latency,
+        avg_avg_totalresponse,
+        p50_avg_totalresponse,
+        p75_avg_totalresponse,
         memetic_num_requests / num_of_experiments, memetic_calculation_time / num_of_experiments,
         memetic_services_on_fog / num_of_experiments))
 
