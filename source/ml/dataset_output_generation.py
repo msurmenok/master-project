@@ -19,7 +19,7 @@ def generate_output(folder_result, output_filepath):
 
     # generate y
     file_averages = open(output_file, 'a+')
-    file_averages.write('id,average total time\n')
+    file_averages.write('id,average_total_time\n')
 
     for file in files_result:
         pattern = '^Results.*\d.csv$'
