@@ -5,3 +5,7 @@ __pycache__/
 source/data/
 source/profiler_*
 source/TestMemetic.py
+source/ml/data
+source/ml/results
+
+

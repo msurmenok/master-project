@@ -4,8 +4,8 @@ import time
 import json
 import random
 import logging.config
-from ExperimentSetup import ExperimentSetup
-from ExperimentConfigs import configs
+from TrainingExperimentSetup import ExperimentSetup
+from TrainingExperimentConfigs import configs
 import numpy as np
 from multiprocessing import Pool
 
@@ -26,7 +26,7 @@ from jsonPopulation import JSONPopulation
 # folder_results = "results/"
 
 
-def main(stop_time, it, algorithm, config, folder_results, folder_data):
+def main(stop_time, it, index, config, folder_results, folder_data):
     # Create topology from json
     folder_data = '/' + folder_data
     topo = Topology()
@@ -40,7 +40,7 @@ def main(stop_time, it, algorithm, config, folder_results, folder_data):
     apps = create_applications_from_json(data_app)
 
     # load placement algorithm
-    placementJson = json.load(open(os.path.dirname(__file__) + folder_data + "/allocDefinition" + algorithm + ".json"))
+    placementJson = json.load(open(os.path.dirname(__file__) + folder_data + "/allocDefinition_" + str(it) + "_" + str(index) + ".json"))
     placement = JSONPlacement(name="Placement", json=placementJson)
 
     # load population
@@ -51,8 +51,8 @@ def main(stop_time, it, algorithm, config, folder_results, folder_data):
     # selectorPath = MinimunPath()
     selectorPath = DeviceSpeedAwareRouting()
     # folder_results = 'results/'
-    s = Sim(topo, default_results_path=folder_results + "Results_%s_%s_%i_%i" % (
-        algorithm, config['scenario'], stop_time, it))
+    s = Sim(topo, default_results_path=folder_results + "Results_%i_%i" % (
+        it, index))
 
     for aName in apps.keys():
         print("Deploying app: ", aName)
@@ -68,127 +68,87 @@ def main(stop_time, it, algorithm, config, folder_results, folder_data):
 
 
 def initialize_experiment(config, iteration, folder_results, folder_data):
-    sg = ExperimentSetup(config=config, folder_data=folder_data)
+    sg = ExperimentSetup(config=config, folder_data=folder_data, iteration=iteration)
     sg.networkGeneration()
     sg.appGeneration()
     sg.userGeneration()
 
-    # First Fit RAM
-    start_time = time.time()  # measure time for placement
-    services_placement_count = sg.firstFitRAMPlacement()
-    finish_time = time.time() - start_time
 
-    services_in_fog, services_in_cloud = services_placement_count
-    file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
-    file.write('%s,FirstFitRAM,%s,%s,%s\n' % (
-        config['scenario'] + '_' + str(iteration), str(finish_time), str(services_in_fog), str(services_in_cloud)))
-
-    # First Fit TIME
-    start_time = time.time()  # measure time for placement
-    services_placement_count = sg.firstFitTimePlacement()
-    finish_time = time.time() - start_time
-
-    services_in_fog, services_in_cloud = services_placement_count
-    file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
-    file.write('%s,FirstFitTime,%s,%s,%s\n' % (
-        config['scenario'] + '_' + str(iteration), str(finish_time), str(services_in_fog), str(services_in_cloud)))
 
     # Memetic Algorithm
     num_creatures = 50
     num_generations = 500
+    #
+    # # Memetic Algorithm without Local Search
+    # start_time = time.time()  # measure time to complete
+    # services_placement_count = sg.memeticWithoutLocalSearchPlacement(num_creatures, num_generations)
+    # finish_time = time.time() - start_time
+    #
+    # services_in_fog, services_in_cloud = services_placement_count
+    # file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
+    # file.write('%s,MemeticWithoutLocalSearch,%s,%s,%s\n' % (
+    #     config['scenario'] + '_' + str(iteration), str(finish_time), str(services_in_fog), str(services_in_cloud)))
 
-    # Memetic Algorithm without Local Search
-    start_time = time.time()  # measure time to complete
-    services_placement_count = sg.memeticWithoutLocalSearchPlacement(num_creatures, num_generations)
-    finish_time = time.time() - start_time
+    # # Memetic experimental
+    # start_time = time.time()  # measure time to complete
+    # services_placement_count = sg.memeticExperimentalPlacement(num_creatures, num_generations)
+    # finish_time = time.time() - start_time
+    #
+    # services_in_fog, services_in_cloud = services_placement_count
+    # file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
+    # file.write('%s,MemeticExperimental1,%s,%s,%s\n' % (
+    #     config['scenario'] + '_' + str(iteration), str(finish_time), str(services_in_fog), str(services_in_cloud)))
 
-    services_in_fog, services_in_cloud = services_placement_count
-    file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
-    file.write('%s,MemeticWithoutLocalSearch,%s,%s,%s\n' % (
-        config['scenario'] + '_' + str(iteration), str(finish_time), str(services_in_fog), str(services_in_cloud)))
+    # # Memetic experimental 3
+    # start_time = time.time()  # measure time to complete
+    # services_placement_count = sg.memeticExperimentalPlacement3(num_creatures, num_generations)
+    # finish_time = time.time() - start_time
 
-    # Memetic experimental
-    start_time = time.time()  # measure time to complete
-    services_placement_count = sg.memeticExperimentalPlacement(num_creatures, num_generations)
-    finish_time = time.time() - start_time
-
-    services_in_fog, services_in_cloud = services_placement_count
-    file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
-    file.write('%s,MemeticExperimental1,%s,%s,%s\n' % (
-        config['scenario'] + '_' + str(iteration), str(finish_time), str(services_in_fog), str(services_in_cloud)))
-
-    # Memetic experimental 3
-    start_time = time.time()  # measure time to complete
-    services_placement_count = sg.memeticExperimentalPlacement3(num_creatures, num_generations)
-    finish_time = time.time() - start_time
-
-    services_in_fog, services_in_cloud = services_placement_count
-    file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
-    file.write('%s,MemeticExperimental3,%s,%s,%s\n' % (
-        config['scenario'] + '_' + str(iteration), str(finish_time), str(services_in_fog), str(services_in_cloud)))
+    # services_in_fog, services_in_cloud = services_placement_count
+    # file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
+    # file.write('%s,MemeticExperimental3,%s,%s,%s\n' % (
+    #     config['scenario'] + '_' + str(iteration), str(finish_time), str(services_in_fog), str(services_in_cloud)))
 
     # Memetic experimental 2
-    start_time = time.time()  # measure time to complete
-    services_placement_count = sg.memeticExperimentalPlacement2(num_creatures, num_generations)
-    finish_time = time.time() - start_time
+    num_solutions = sg.memeticExperimentalPlacement2(num_creatures, num_generations)
+    return num_solutions
 
-    services_in_fog, services_in_cloud = services_placement_count
-    file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
-    file.write('%s,MemeticExperimental2,%s,%s,%s\n' % (
-        config['scenario'] + '_' + str(iteration), str(finish_time), str(services_in_fog), str(services_in_cloud)))
+    # services_in_fog, services_in_cloud = services_placement_count
+    # file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
+    # file.write('%s,MemeticExperimental2,%s,%s,%s\n' % (
+    #     config['scenario'] + '_' + str(iteration), str(finish_time), str(services_in_fog), str(services_in_cloud)))
 
-    # Memetic experimental 4
-    start_time = time.time()  # measure time to complete
-    services_placement_count = sg.memeticExperimentalPlacement4(num_creatures, num_generations)
-    finish_time = time.time() - start_time
-
-    services_in_fog, services_in_cloud = services_placement_count
-    file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
-    file.write('%s,MemeticExperimental4,%s,%s,%s\n' % (
-        config['scenario'] + '_' + str(iteration), str(finish_time), str(services_in_fog), str(services_in_cloud)))
-
-    # Memetic experimental 5
-    start_time = time.time()  # measure time to complete
-    services_placement_count = sg.memeticExperimentalPlacement5(num_creatures, num_generations)
-    finish_time = time.time() - start_time
-
-    services_in_fog, services_in_cloud = services_placement_count
-    file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
-    file.write('%s,MemeticExperimental5,%s,%s,%s\n' % (
-        config['scenario'] + '_' + str(iteration), str(finish_time), str(services_in_fog), str(services_in_cloud)))
 
     # Memetic experimental 6
-    start_time = time.time()  # measure time to complete
-    services_placement_count = sg.memeticExperimentalPlacement6(num_creatures, num_generations)
-    finish_time = time.time() - start_time
-
-    services_in_fog, services_in_cloud = services_placement_count
-    file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
-    file.write('%s,MemeticExperimental6,%s,%s,%s\n' % (
-        config['scenario'] + '_' + str(iteration), str(finish_time), str(services_in_fog), str(services_in_cloud)))
+    # start_time = time.time()  # measure time to complete
+    # services_placement_count = sg.memeticExperimentalPlacement6(num_creatures, num_generations)
+    # finish_time = time.time() - start_time
+    #
+    # services_in_fog, services_in_cloud = services_placement_count
+    # file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
+    # file.write('%s,MemeticExperimental6,%s,%s,%s\n' % (
+    #     config['scenario'] + '_' + str(iteration), str(finish_time), str(services_in_fog), str(services_in_cloud)))
 
 
     # Memetic Algorithm with Local Search
-    start_time = time.time()  # measure time to complete
-    services_placement_count = sg.memeticPlacement(num_creatures, num_generations)
-    finish_time = time.time() - start_time
+    # start_time = time.time()  # measure time to complete
+    # services_placement_count = sg.memeticPlacement(num_creatures, num_generations)
+    # finish_time = time.time() - start_time
+    #
+    # services_in_fog, services_in_cloud = services_placement_count
+    # file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
+    # file.write(
+    #     '%s,Memetic,%s,%s,%s\n' % (
+    #         config['scenario'] + '_' + str(iteration), str(finish_time), str(services_in_fog), str(services_in_cloud)))
 
-    services_in_fog, services_in_cloud = services_placement_count
-    file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
-    file.write(
-        '%s,Memetic,%s,%s,%s\n' % (
-            config['scenario'] + '_' + str(iteration), str(finish_time), str(services_in_fog), str(services_in_cloud)))
-
-    file.close()
+    # file.close()
 
 
 def run_simulation():
     # logging.config.fileConfig(os.getcwd() + '/logging.ini')
     # simulationDuration = 10000
     simulationDuration = 100000
-    algorithms = ['FirstFitRAM', 'FirstFitTime', 'MemeticWithoutLocalSearch', 'MemeticExperimental',
-                  'MemeticExperimental2', 'MemeticExperimental3', 'MemeticExperimental4', 'MemeticExperimental5',
-                  'MemeticExperimental6', 'Memetic']
+    algorithms = ['MemeticExperimental2']
     # algorithms = ['FirstFitRAM', 'FirstFitTime']
     # configs are from ExperimentConfigs file
     for config in configs:
@@ -202,22 +162,19 @@ def run_simulation():
 
 
 def run_single_experiment(iteration, algorithms, config, simulationDuration):
-    folder_results = 'results/current/results_' + config['scenario'] + '_' + str(iteration)
+    folder_results = 'results/current/'
     folder_data = 'data/' + 'data_' + config['scenario'] + '_' + str(iteration)
     os.makedirs(folder_results, exist_ok=True)
     os.makedirs(folder_data, exist_ok=True)
-    initialize_experiment(config, iteration, folder_results, folder_data)
+    num_solutions = initialize_experiment(config, iteration, folder_results, folder_data)
     for algorithm in algorithms:
         random.seed(iteration)
         np.random.seed(iteration)
-        logging.info("Running experiment type: %s iteration: %i" % (config['scenario'], iteration))
+        for i in range(num_solutions):
+            main(stop_time=simulationDuration, it=iteration, index=i, config=config,
+                 folder_results=folder_results,
+                 folder_data=folder_data)
 
-        s_time = time.time()
-        main(stop_time=simulationDuration, it=iteration, algorithm=algorithm, config=config,
-             folder_results=folder_results,
-             folder_data=folder_data)
-        print("%s algorithm, %d iteration is done" % (algorithm, iteration))
-        print("\n--- %s seconds ---" % (time.time() - s_time))
 
 
 if __name__ == '__main__':
