@@ -204,20 +204,20 @@ def local_search(population, utilization, hosts, services, number_of_individuals
                                             and utilization[iterator_individual][physical_position][2] - \
                                             services[iterator_virtual2][2] >= 0:
                                         utilization[iterator_individual][physical_position2][0] += \
-                                        services[iterator_virtual2][0]
+                                            services[iterator_virtual2][0]
                                         utilization[iterator_individual][physical_position2][1] += \
-                                        services[iterator_virtual2][1]
+                                            services[iterator_virtual2][1]
                                         utilization[iterator_individual][physical_position2][2] += \
-                                        services[iterator_virtual2][2]
+                                            services[iterator_virtual2][2]
 
                                         utilization[iterator_individual][physical_position][0] -= \
-                                        services[iterator_virtual2][0]
+                                            services[iterator_virtual2][0]
                                         utilization[iterator_individual][physical_position][1] -= \
-                                        services[iterator_virtual2][1]
+                                            services[iterator_virtual2][1]
                                         utilization[iterator_individual][physical_position][2] -= \
-                                        services[iterator_virtual2][2]
+                                            services[iterator_virtual2][2]
                                         population[iterator_individual][iterator_virtual2] = \
-                                        population[iterator_individual][iterator_virtual]
+                                            population[iterator_individual][iterator_virtual]
 
         if option_to_execute == 2:
             for iterator_individual in range(number_of_individuals):
@@ -235,16 +235,15 @@ def local_search(population, utilization, hosts, services, number_of_individuals
                                         and utilization[iterator_individual][physical_position2][2] - \
                                         services[iterator_virtual][2] >= 0:
                                     utilization[iterator_individual][physical_position2][0] -= \
-                                    services[iterator_virtual][0]
+                                        services[iterator_virtual][0]
                                     utilization[iterator_individual][physical_position2][1] -= \
-                                    services[iterator_virtual][1]
+                                        services[iterator_virtual][1]
                                     utilization[iterator_individual][physical_position2][2] -= \
-                                    services[iterator_virtual][2]
+                                        services[iterator_virtual][2]
                                     population[iterator_individual][iterator_virtual] = population[iterator_individual][
                                         iterator_virtual2]
                                     break
     return population, utilization
-
 
 
 def non_dominated_sorting(solutions, number_of_individuals):
@@ -327,14 +326,6 @@ def pareto_insert(pareto_head, individual, objectives_functions):
     if pareto_element not in pareto_head:
         pareto_head.append(pareto_element)
     return pareto_head
-
-
-def get_min_cost(pareto_head):
-    pass
-
-
-def get_max_cost(pareto_head):
-    pass
 
 
 def selection(fronts, number_of_individuals, percent):
@@ -787,6 +778,5 @@ def doprofiling():
 
     print('==========================')
     print("total time = ", total_time)
-
 
 # doprofiling()
