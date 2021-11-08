@@ -167,6 +167,36 @@ def initialize_experiment(config, iteration, folder_results, folder_data):
     file.write('%s,MemeticExperimental6,%s,%s,%s\n' % (
         config['scenario'] + '_' + str(iteration), str(finish_time), str(services_in_fog), str(services_in_cloud)))
 
+    # Memetic experimental 7
+    start_time = time.time()  # measure time to complete
+    services_placement_count = sg.memeticExperimentalPlacement7(num_creatures, num_generations)
+    finish_time = time.time() - start_time
+
+    services_in_fog, services_in_cloud = services_placement_count
+    file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
+    file.write('%s,MemeticExperimental7,%s,%s,%s\n' % (
+        config['scenario'] + '_' + str(iteration), str(finish_time), str(services_in_fog), str(services_in_cloud)))
+
+    # Memetic experimental 8
+    start_time = time.time()  # measure time to complete
+    services_placement_count = sg.memeticExperimentalPlacement8(num_creatures, num_generations)
+    finish_time = time.time() - start_time
+
+    services_in_fog, services_in_cloud = services_placement_count
+    file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
+    file.write('%s,MemeticExperimental8,%s,%s,%s\n' % (
+        config['scenario'] + '_' + str(iteration), str(finish_time), str(services_in_fog), str(services_in_cloud)))
+
+    # Memetic experimental 9
+    start_time = time.time()  # measure time to complete
+    services_placement_count = sg.memeticExperimentalPlacement9(num_creatures, num_generations)
+    finish_time = time.time() - start_time
+
+    services_in_fog, services_in_cloud = services_placement_count
+    file = open(folder_results + "/algorithm_time.csv", 'a+')  # save completion time
+    file.write('%s,MemeticExperimental9,%s,%s,%s\n' % (
+        config['scenario'] + '_' + str(iteration), str(finish_time), str(services_in_fog), str(services_in_cloud)))
+
 
     # Memetic Algorithm with Local Search
     start_time = time.time()  # measure time to complete
@@ -188,7 +218,7 @@ def run_simulation():
     simulationDuration = 100000
     algorithms = ['FirstFitRAM', 'FirstFitTime', 'MemeticWithoutLocalSearch', 'MemeticExperimental',
                   'MemeticExperimental2', 'MemeticExperimental3', 'MemeticExperimental4', 'MemeticExperimental5',
-                  'MemeticExperimental6', 'Memetic']
+                  'MemeticExperimental6', 'MemeticExperimental7', 'MemeticExperimental8', 'MemeticExperimental9','Memetic']
     # algorithms = ['FirstFitRAM', 'FirstFitTime']
     # configs are from ExperimentConfigs file
     for config in configs:
