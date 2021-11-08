@@ -568,7 +568,10 @@ def report_best_population(pareto_head, hosts, services, h_size, s_size):
 
             obj_f_normalized = np.zeros(len(obj_f))
             for k in range(len(obj_f_normalized)):
-                obj_f_normalized[k] = (obj_f[k] - objectives_min[k]) / objectives_diff[k]
+                if objectives_diff[k] != 0:
+                    obj_f_normalized[k] = (obj_f[k] - objectives_min[k]) / objectives_diff[k]
+                else:
+                    obj_f_normalized[k] = (obj_f[k] - objectives_min[k])
 
             cost = w1 * obj_f_normalized[0] + w2 * obj_f_normalized[1] + w3 * obj_f_normalized[2] - w4 * \
                    obj_f_normalized[3] - w5 * obj_f_normalized[4]

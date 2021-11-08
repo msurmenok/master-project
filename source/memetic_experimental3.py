@@ -474,7 +474,7 @@ def memetic_experimental3(num_creatures, NUM_GENERATIONS, services, hosts, MAX_P
     # report the best
     # cost_solution = report_best_population(P, distance_to_cloud, hosts, num_creatures, num_objective_functions,
     #                                        services, user_to_host_distance, MAX_PRIORITY)
-    cost_solution = report_best_population2(pareto_head, hosts, services, num_hosts, num_services)
+    cost_solution = report_best_population(pareto_head, hosts, services, num_hosts, num_services)
     return cost_solution[0][0]
 
 
@@ -513,7 +513,10 @@ def report_best_population(pareto_head, hosts, services, h_size, s_size):
 
             obj_f_normalized = np.zeros(len(obj_f))
             for k in range(len(obj_f_normalized)):
-                obj_f_normalized[k] = (obj_f[k] - objectives_min[k]) / objectives_diff[k]
+                if objectives_diff[k] != 0:
+                    obj_f_normalized[k] = (obj_f[k] - objectives_min[k]) / objectives_diff[k]
+                else:
+                    obj_f_normalized[k] = (obj_f[k] - objectives_min[k])
 
             cost = w1 * obj_f_normalized[0] + w2 * obj_f_normalized[1] + w3 * obj_f_normalized[2] - w4 * \
                    obj_f_normalized[3] - w5 * obj_f_normalized[4]
