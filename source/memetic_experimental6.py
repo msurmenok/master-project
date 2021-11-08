@@ -143,23 +143,13 @@ def fitness(individual, services, hosts, user_to_host_distance, distance_to_clou
     # Active Hosts Minimization
     f5 = len(active_hosts_indexes)
 
-    # weights, sum of all weights should be equal 1:
-    w1 = w2 = w3 = w4 = w5 = 1
-    # weights for successful placement
-
-    # add all max objectives, subtract all min objectives
-    # objectives = np.array([f1, f2, f3, f4, f5])
-    # w1 = 1000
-    # w2 = 1000
-    # add all max objectives, subtract all min objectives
-    objectives = np.array(
-        [(f1 * w1) / num_services, (f2 * w2) / num_important_services, (f3 * w3) / (num_busy_hosts * max_surv),
-         (f4 * w4) / (num_busy_hosts * max_distance), (f5 * w5) / num_hosts])
+    objectives = np.array([f1, f2, f3, f4, f5])
     return objectives
 
 
 # local search
-def local_search(population, utilization, hosts, services, number_of_individuals, h_size, s_size, service_to_closest_host):
+def local_search(population, utilization, hosts, services, number_of_individuals, h_size, s_size,
+                 service_to_closest_host):
     iterator_individual = 0
     physical_position = 0
     physical_position2 = 0
@@ -203,20 +193,20 @@ def local_search(population, utilization, hosts, services, number_of_individuals
                                             and utilization[iterator_individual][physical_position][2] - \
                                             services[host_id][2] >= 0:
                                         utilization[iterator_individual][physical_position2][0] += \
-                                        services[host_id][0]
+                                            services[host_id][0]
                                         utilization[iterator_individual][physical_position2][1] += \
-                                        services[host_id][1]
+                                            services[host_id][1]
                                         utilization[iterator_individual][physical_position2][2] += \
-                                        services[host_id][2]
+                                            services[host_id][2]
 
                                         utilization[iterator_individual][physical_position][0] -= \
-                                        services[host_id][0]
+                                            services[host_id][0]
                                         utilization[iterator_individual][physical_position][1] -= \
-                                        services[host_id][1]
+                                            services[host_id][1]
                                         utilization[iterator_individual][physical_position][2] -= \
-                                        services[host_id][2]
+                                            services[host_id][2]
                                         population[iterator_individual][host_id] = \
-                                        population[iterator_individual][iterator_virtual]
+                                            population[iterator_individual][iterator_virtual]
 
         if option_to_execute == 2:
             for iterator_individual in range(number_of_individuals):
@@ -233,16 +223,15 @@ def local_search(population, utilization, hosts, services, number_of_individuals
                                     and utilization[iterator_individual][physical_position2][2] - \
                                     services[iterator_virtual][2] >= 0:
                                 utilization[iterator_individual][physical_position2][0] -= \
-                                services[iterator_virtual][0]
+                                    services[iterator_virtual][0]
                                 utilization[iterator_individual][physical_position2][1] -= \
-                                services[iterator_virtual][1]
+                                    services[iterator_virtual][1]
                                 utilization[iterator_individual][physical_position2][2] -= \
-                                services[iterator_virtual][2]
+                                    services[iterator_virtual][2]
                                 population[iterator_individual][iterator_virtual] = population[iterator_individual][
                                     host_id]
                                 break
     return population, utilization
-
 
 
 def non_dominated_sorting(solutions, number_of_individuals):
@@ -455,7 +444,8 @@ def memetic_experimental6(num_creatures, NUM_GENERATIONS, services, hosts, MAX_P
 
     # apply local search to solutions
     P, hosts_utilization_for_each_creature = local_search(repaired_population, hosts_utilization_for_each_creature,
-                                                          hosts, services, num_creatures, num_hosts, num_services, service_to_closest_host)
+                                                          hosts, services, num_creatures, num_hosts, num_services,
+                                                          service_to_closest_host)
 
     # parameters to normalize fitness function
     priority_index = 3  # the last index (3) in services describes its priority
@@ -512,7 +502,8 @@ def memetic_experimental6(num_creatures, NUM_GENERATIONS, services, hosts, MAX_P
             utilization_Q[i] = result[1]
 
         if generation % lc_frequency == 0:
-            Q, utilization_Q = local_search(Q, utilization_Q, hosts, services, num_creatures, num_hosts, num_services, service_to_closest_host)
+            Q, utilization_Q = local_search(Q, utilization_Q, hosts, services, num_creatures, num_hosts, num_services,
+                                            service_to_closest_host)
 
         # calculate the cost of each objective function for each solution
         for i in range(num_creatures):
@@ -532,13 +523,11 @@ def memetic_experimental6(num_creatures, NUM_GENERATIONS, services, hosts, MAX_P
     # print("final utilization", load_utilization(P, hosts, services, num_creatures, num_hosts, num_services))
 
     # report the best
-    # cost_solution = report_best_population(P, distance_to_cloud, hosts, num_creatures, num_objective_functions,
-    #                                        services, user_to_host_distance, MAX_PRIORITY)
-    cost_solution = report_best_population2(pareto_head, hosts, services, num_hosts, num_services)
+    cost_solution = report_best_population(pareto_head, hosts, services, num_hosts, num_services)
     return cost_solution[0][0]
 
 
-def report_best_population2(pareto_head, hosts, services, h_size, s_size):
+def report_best_population(pareto_head, hosts, services, h_size, s_size):
     pareto_size = len(pareto_head)
 
     best_P = list()
@@ -551,6 +540,15 @@ def report_best_population2(pareto_head, hosts, services, h_size, s_size):
         best_P.append(solution)
 
     objective_functions_best_P = np.stack(objective_functions_best_P)
+    objectives_max = objective_functions_best_P.max(axis=0)
+    objectives_min = objective_functions_best_P.min(axis=0)
+    objectives_diff = objectives_max - objectives_min
+    w1 = 0.2
+    w2 = 0.2
+    w3 = 0.2
+    w4 = 0.2
+    w5 = 0.2
+
     best_P = np.stack(best_P)
 
     fronts_best_P = non_dominated_sorting(objective_functions_best_P, pareto_size)
@@ -561,33 +559,16 @@ def report_best_population2(pareto_head, hosts, services, h_size, s_size):
         if (fronts_best_P[i] == 1):
             solution = best_P[i]
             obj_f = objective_functions_best_P[i]
-            cost = obj_f[0] + obj_f[1] + obj_f[2] - obj_f[3] - obj_f[4]
+
+            obj_f_normalized = np.zeros(len(obj_f))
+            for k in range(len(obj_f_normalized)):
+                obj_f_normalized[k] = (obj_f[k] - objectives_min[k]) / objectives_diff[k]
+
+            cost = w1 * obj_f_normalized[0] + w2 * obj_f_normalized[1] + w3 * obj_f_normalized[2] - w4 * \
+                   obj_f_normalized[3] - w5 * obj_f_normalized[4]
             cost_solution.append((solution, cost))
     cost_solution = sorted(cost_solution, key=lambda x: x[1], reverse=True)
     return cost_solution
-
-
-def report_best_population(P, distance_to_cloud, hosts, num_creatures, num_objective_functions, services,
-                           user_to_host_distance, max_priority, num_services, num_hosts, num_important_services,
-                           max_surv, max_distance):
-    objectives_functions_P = np.zeros((num_creatures, num_objective_functions))
-    for i in range(num_creatures):
-        fitness_score = fitness(P[i], services, hosts, user_to_host_distance, distance_to_cloud, max_priority,
-                                num_services, num_hosts, num_important_services, max_surv, max_distance)
-        objectives_functions_P[i] = fitness_score
-    fronts_best_P = non_dominated_sorting(objectives_functions_P, num_creatures)
-    # sort by best fitness value:
-    cost_solution = []
-    for i in range(num_creatures):
-        # only the first pareto front
-        if fronts_best_P[i] == 1:
-            solution = P[i]
-            obj_f = objectives_functions_P[i]
-            cost = obj_f[0] + obj_f[1] + obj_f[2] - obj_f[3] - obj_f[4]
-            cost_solution.append((solution, cost))
-    cost_solution = sorted(cost_solution, key=lambda x: x[1], reverse=True)
-    return cost_solution
-
 
 def test_memetic():
     # test memetic
@@ -791,6 +772,5 @@ def doprofiling():
 
     print('==========================')
     print("total time = ", total_time)
-
 
 # doprofiling()
