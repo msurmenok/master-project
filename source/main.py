@@ -197,7 +197,6 @@ def initialize_experiment(config, iteration, folder_results, folder_data):
     file.write('%s,MemeticExperimental9,%s,%s,%s\n' % (
         config['scenario'] + '_' + str(iteration), str(finish_time), str(services_in_fog), str(services_in_cloud)))
 
-
     # Memetic Algorithm with Local Search
     start_time = time.time()  # measure time to complete
     services_placement_count = sg.memeticPlacement(num_creatures, num_generations)
@@ -218,7 +217,8 @@ def run_simulation():
     simulationDuration = 100000
     algorithms = ['FirstFitRAM', 'FirstFitTime', 'MemeticWithoutLocalSearch', 'MemeticExperimental',
                   'MemeticExperimental2', 'MemeticExperimental3', 'MemeticExperimental4', 'MemeticExperimental5',
-                  'MemeticExperimental6', 'MemeticExperimental7', 'MemeticExperimental8', 'MemeticExperimental9','Memetic']
+                  'MemeticExperimental6', 'MemeticExperimental7', 'MemeticExperimental8', 'MemeticExperimental9',
+                  'Memetic']
     # algorithms = ['FirstFitRAM', 'FirstFitTime']
     # configs are from ExperimentConfigs file
     for config in configs:

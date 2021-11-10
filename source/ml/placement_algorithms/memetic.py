@@ -22,7 +22,7 @@ def check_feasibility_and_repair(services, individual, individual_hosts, MAX_PRI
     # add the third argument - other hosts that are not active rn but can be used
     # initialize to current hosts utilization, refresh for every creature
     hosts_utilization = np.array(individual_hosts, copy=True)
-    hosts_utilization = np.delete(hosts_utilization, (3, 4, 5, 6), 1)
+    hosts_utilization = np.delete(hosts_utilization, (3, 4, 5), 1)
     num_services = individual.shape[0]
     feasible = True
 
@@ -85,13 +85,10 @@ def repair(services, individual, hosts_utilization, MAX_PRIORITY):
     return (individual, np.copy(hosts_utilization))
 
 
-def fitness(individual, services, hosts, user_to_host_distance, distance_to_cloud, max_priority, min_deadline,
-            max_deadline):
+def fitness(individual, services, hosts, user_to_host_distance, distance_to_cloud, max_priority, num_services,
+            num_hosts, num_important_services, max_surv, max_distance):
     priority_index = 3  # the last index (3) in services describes its priority
     time_index = 3  # index 3 in host describes how long it is available
-    deadline_diff = 1
-    if max_deadline - min_deadline > 0:
-        deadline_diff = max_deadline - min_deadline
 
     # MAX, F1 - Number of Pushed Services Maximization
     f1 = 0
@@ -122,13 +119,20 @@ def fitness(individual, services, hosts, user_to_host_distance, distance_to_clou
     # for host_index in active_hosts_indexes:
     #     f3 += hosts[int(host_index)][time_index]
 
+    # num_busy_hosts may include duplicates, used for normalization only
+    num_busy_hosts = 0
+
     for i in range(len(individual)):
         if not np.isnan(individual[i]):
+            num_busy_hosts += 1
             f3 += hosts[int(individual[i])][time_index]
 
     # MIN, F4
     # Host Distance Minimization
+    location_index = 4  # index 4 in host describes the location of the host
     f4 = 0
+    # for host_index in active_hosts_indexes:
+    #     f4 += hosts[int(host_index)][location_index]
 
     for i in range(len(individual)):
         if not np.isnan(individual[i]):
@@ -140,42 +144,18 @@ def fitness(individual, services, hosts, user_to_host_distance, distance_to_clou
     # Active Hosts Minimization
     f5 = len(active_hosts_indexes)
 
-    # service: [cpu, ram, storage, priority, x, y, deadline]
-    # host: [cpu, ram, storage, time_availability, x, y, ipt]
-
-    # MAX, F6
-    # Prioritize placement of services with smallest deadline on fog
-    # normalize deadlines: value - min_deadline / (max_deadline - min_deadline)
-    # inverse it, 1 - result from previous step
-    f6 = 0
-    deadline_index = 6
-    for i in range(len(individual)):
-        if not np.isnan(individual[i]):
-            normalized_deadline = (services[i][deadline_index] - min_deadline) / deadline_diff
-            value = (1 - normalized_deadline)
-            f6 += value
-
-    # MAX, F7
-    # Prioritize hosts with fastest processors, higher IPT
-    f7 = 0
-    ipt_index = 6
-    for i in range(len(individual)):
-        if not np.isnan(individual[i]):
-            f7 += hosts[int(individual[i])][ipt_index]
-
-    objectives = np.array([f1, f2, f3, f4, f5, f6, f7])
+    objectives = np.array([f1, f2, f3, f4, f5])
     return objectives
 
 
 # local search
-def local_search(population, utilization, hosts, services, number_of_individuals, h_size, s_size,
-                 service_to_closest_host):
+def local_search(population, utilization, hosts, services, number_of_individuals, h_size, s_size):
     iterator_individual = 0
     physical_position = 0
     physical_position2 = 0
     iterator_position = 0
     iterator_virtual = 0
-    host_id = 0
+    iterator_virtual2 = 0
     iterator_physical = 0
     option = 0
 
@@ -201,31 +181,31 @@ def local_search(population, utilization, hosts, services, number_of_individuals
                     physical_position = population[iterator_individual][iterator_virtual]
                     if not np.isnan(physical_position):
                         physical_position = int(physical_position)
-                        for host_id in range(s_size):
-                            physical_position2 = population[iterator_individual][host_id]
+                        for iterator_virtual2 in range(s_size):
+                            physical_position2 = population[iterator_individual][iterator_virtual2]
                             if not np.isnan(physical_position2):
                                 physical_position2 = int(physical_position2)
                                 if physical_position != physical_position2:
                                     if utilization[iterator_individual][physical_position][0] - \
-                                            services[host_id][0] >= 0 \
+                                            services[iterator_virtual2][0] >= 0 \
                                             and utilization[iterator_individual][physical_position][1] - \
-                                            services[host_id][1] >= 0 \
+                                            services[iterator_virtual2][1] >= 0 \
                                             and utilization[iterator_individual][physical_position][2] - \
-                                            services[host_id][2] >= 0:
+                                            services[iterator_virtual2][2] >= 0:
                                         utilization[iterator_individual][physical_position2][0] += \
-                                            services[host_id][0]
+                                            services[iterator_virtual2][0]
                                         utilization[iterator_individual][physical_position2][1] += \
-                                            services[host_id][1]
+                                            services[iterator_virtual2][1]
                                         utilization[iterator_individual][physical_position2][2] += \
-                                            services[host_id][2]
+                                            services[iterator_virtual2][2]
 
                                         utilization[iterator_individual][physical_position][0] -= \
-                                            services[host_id][0]
+                                            services[iterator_virtual2][0]
                                         utilization[iterator_individual][physical_position][1] -= \
-                                            services[host_id][1]
+                                            services[iterator_virtual2][1]
                                         utilization[iterator_individual][physical_position][2] -= \
-                                            services[host_id][2]
-                                        population[iterator_individual][host_id] = \
+                                            services[iterator_virtual2][2]
+                                        population[iterator_individual][iterator_virtual2] = \
                                             population[iterator_individual][iterator_virtual]
 
         if option_to_execute == 2:
@@ -233,24 +213,25 @@ def local_search(population, utilization, hosts, services, number_of_individuals
                 for iterator_virtual in range(s_size):
                     physical_position = population[iterator_individual][iterator_virtual]
                     if np.isnan(physical_position):
-                        for host_id in range(len(hosts)):
-                            physical_position2 = service_to_closest_host[iterator_virtual][host_id]
-                            physical_position2 = int(physical_position2)
-                            if utilization[iterator_individual][physical_position2][0] - \
-                                    services[iterator_virtual][0] >= 0 \
-                                    and utilization[iterator_individual][physical_position2][1] - \
-                                    services[iterator_virtual][1] >= 0 \
-                                    and utilization[iterator_individual][physical_position2][2] - \
-                                    services[iterator_virtual][2] >= 0:
-                                utilization[iterator_individual][physical_position2][0] -= \
-                                    services[iterator_virtual][0]
-                                utilization[iterator_individual][physical_position2][1] -= \
-                                    services[iterator_virtual][1]
-                                utilization[iterator_individual][physical_position2][2] -= \
-                                    services[iterator_virtual][2]
-                                population[iterator_individual][iterator_virtual] = population[iterator_individual][
-                                    host_id]
-                                break
+                        for iterator_virtual2 in range(s_size):
+                            physical_position2 = population[iterator_individual][iterator_virtual2]
+                            if not np.isnan(physical_position2):
+                                physical_position2 = int(physical_position2)
+                                if utilization[iterator_individual][physical_position2][0] - \
+                                        services[iterator_virtual][0] >= 0 \
+                                        and utilization[iterator_individual][physical_position2][1] - \
+                                        services[iterator_virtual][1] >= 0 \
+                                        and utilization[iterator_individual][physical_position2][2] - \
+                                        services[iterator_virtual][2] >= 0:
+                                    utilization[iterator_individual][physical_position2][0] -= \
+                                        services[iterator_virtual][0]
+                                    utilization[iterator_individual][physical_position2][1] -= \
+                                        services[iterator_virtual][1]
+                                    utilization[iterator_individual][physical_position2][2] -= \
+                                        services[iterator_virtual][2]
+                                    population[iterator_individual][iterator_virtual] = population[iterator_individual][
+                                        iterator_virtual2]
+                                    break
     return population, utilization
 
 
@@ -307,11 +288,10 @@ def is_dominated(solution, a, b):
     # return 0
     cond1 = solution[b][0] >= solution[a][0] and solution[b][1] >= solution[a][1] and solution[b][2] >= solution[a][
         2] and \
-            solution[b][3] <= solution[a][3] and solution[b][4] <= solution[a][4] and solution[b][5] >= solution[a][
-                5] and solution[b][6] >= solution[a][6]
+            solution[b][3] <= solution[a][3] and solution[b][4] <= solution[a][4]
     cond2 = solution[b][0] == solution[a][0] and solution[b][1] == solution[a][1] and solution[b][2] == solution[a][
-        2] and solution[b][3] == solution[a][3] and solution[b][4] == solution[a][4] and solution[b][5] == solution[a][
-                5] and solution[b][6] == solution[a][6]
+        2] and \
+            solution[b][3] == solution[a][3] and solution[b][4] == solution[a][4]
     return cond1 and (not cond2)
 
 
@@ -335,14 +315,6 @@ def pareto_insert(pareto_head, individual, objectives_functions):
     if pareto_element not in pareto_head:
         pareto_head.append(pareto_element)
     return pareto_head
-
-
-def get_min_cost(pareto_head):
-    pass
-
-
-def get_max_cost(pareto_head):
-    pass
 
 
 def selection(fronts, number_of_individuals, percent):
@@ -417,26 +389,22 @@ def population_evolution(P, Q, objectives_functions_P, objectives_functions_Q, f
             if fronts_PQ[iterator] == actual_pareto and iterator_P < number_of_individuals:
                 if objectives_functions_PQ[iterator][0] != 0 or objectives_functions_PQ[iterator][1] != 0 or \
                         objectives_functions_PQ[iterator][2] != 0 or objectives_functions_PQ[iterator][2] != 0 or \
-                        objectives_functions_PQ[iterator][3] != 0 or objectives_functions_PQ[iterator][4] != 0 or \
-                        objectives_functions_PQ[iterator][5] != 0 or objectives_functions_PQ[iterator][6] != 0:
+                        objectives_functions_PQ[iterator][3] != 0 or objectives_functions_PQ[iterator][4] != 0:
                     objectives_functions_P[iterator_P][0] = objectives_functions_PQ[iterator][0]
                     objectives_functions_P[iterator_P][1] = objectives_functions_PQ[iterator][1]
                     objectives_functions_P[iterator_P][2] = objectives_functions_PQ[iterator][2]
                     objectives_functions_P[iterator_P][3] = objectives_functions_PQ[iterator][3]
                     objectives_functions_P[iterator_P][4] = objectives_functions_PQ[iterator][4]
-                    objectives_functions_P[iterator_P][5] = objectives_functions_PQ[iterator][5]
-                    objectives_functions_P[iterator_P][6] = objectives_functions_PQ[iterator][6]
                     fronts_P[iterator_P] = fronts_PQ[iterator]
                     P[iterator_P] = PQ[iterator]
                     iterator_P += 1
     return P
 
 
-# based on memetic experimental 2
-def memetic_experimental7(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY, distance_to_cloud):
+def memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY, distance_to_cloud):
     num_services = len(services)
     num_hosts = len(hosts)
-    num_objective_functions = 7
+    num_objective_functions = 5
     SELECTION_PERCENT = 0.5
 
     # calculate distance between each user (who requested service) and host using x, y coordinates
@@ -450,11 +418,7 @@ def memetic_experimental7(num_creatures, NUM_GENERATIONS, services, hosts, MAX_P
             distance = np.linalg.norm(user_coordinates - host_coordinates)
             user_to_host_distance[i][j] = distance
 
-    # create hashmap, service id to sorted array of hosts by distance
-    # service_id: [host_id1, host_id2, host_id3]
-    service_to_closest_host = dict()
-    for i in range(len(user_to_host_distance)):
-        service_to_closest_host[i] = np.argsort(user_to_host_distance[i])
+    population_shape = (num_creatures, num_services)
 
     P = initialize(num_creatures, num_services, num_hosts)
 
@@ -469,24 +433,22 @@ def memetic_experimental7(num_creatures, NUM_GENERATIONS, services, hosts, MAX_P
 
     # apply local search to solutions
     P, hosts_utilization_for_each_creature = local_search(repaired_population, hosts_utilization_for_each_creature,
-                                                          hosts, services, num_creatures, num_hosts, num_services,
-                                                          service_to_closest_host)
+                                                          hosts, services, num_creatures, num_hosts, num_services)
 
     # parameters to normalize fitness function
     priority_index = 3  # the last index (3) in services describes its priority
-    deadline_index = 6  # index 3 in host describes how long it is available
+    time_index = 3  # index 3 in host describes how long it is available
     num_important_services = services[(services[:, priority_index] == MAX_PRIORITY)]
     num_important_services, _ = num_important_services.shape
-    services_max = (services.max(axis=0))
-    services_min = (services.min(axis=0))
-    deadline_max = services_max[deadline_index]
-    deadline_min = services_min[deadline_index]
+    max_surv = (hosts.max(axis=0))
+    max_surv = max_surv[time_index]
+    max_distance = np.amax(user_to_host_distance)
 
     # calculate the cost of each objective function for each solution
     objectives_functions_P = np.zeros((num_creatures, num_objective_functions))
     for i in range(num_creatures):
         fitness_score = fitness(P[i], services, hosts, user_to_host_distance, distance_to_cloud, MAX_PRIORITY,
-                                deadline_min, deadline_max)
+                                num_services, num_hosts, num_important_services, max_surv, max_distance)
         objectives_functions_P[i] = fitness_score
 
     # calculate the non-dominated fronts
@@ -526,13 +488,12 @@ def memetic_experimental7(num_creatures, NUM_GENERATIONS, services, hosts, MAX_P
             Q[i] = result[0]
             utilization_Q[i] = result[1]
 
-        Q, utilization_Q = local_search(Q, utilization_Q, hosts, services, num_creatures, num_hosts, num_services,
-                                        service_to_closest_host)
+        Q, utilization_Q = local_search(Q, utilization_Q, hosts, services, num_creatures, num_hosts, num_services)
 
         # calculate the cost of each objective function for each solution
         for i in range(num_creatures):
             fitness_score = fitness(Q[i], services, hosts, user_to_host_distance, distance_to_cloud, MAX_PRIORITY,
-                                    deadline_min, deadline_max)
+                                    num_services, num_hosts, num_important_services, max_surv, max_distance)
             objectives_functions_Q[i] = fitness_score
         # calculate the non-dominated fronts
         fronts_Q = non_dominated_sorting(objectives_functions_Q, num_creatures)
@@ -569,13 +530,11 @@ def report_best_population(pareto_head, hosts, services, h_size, s_size):
     objectives_max = objective_functions_best_P.max(axis=0)
     objectives_min = objective_functions_best_P.min(axis=0)
     objectives_diff = objectives_max - objectives_min
-    w1 = 1 / 7
-    w2 = 1 / 7
-    w3 = 1 / 7
-    w4 = 1 / 7
-    w5 = 1 / 7
-    w6 = 1 / 7
-    w7 = 1 / 7
+    w1 = 0.2
+    w2 = 0.2
+    w3 = 0.2
+    w4 = 0.2
+    w5 = 0.2
 
     best_P = np.stack(best_P)
 
@@ -585,6 +544,7 @@ def report_best_population(pareto_head, hosts, services, h_size, s_size):
     cost_solution = list()
     for i in range(pareto_size):
         if (fronts_best_P[i] == 1):
+            solution = best_P[i]
             obj_f = objective_functions_best_P[i]
 
             obj_f_normalized = np.zeros(len(obj_f))
@@ -595,7 +555,7 @@ def report_best_population(pareto_head, hosts, services, h_size, s_size):
                     obj_f_normalized[k] = (obj_f[k] - objectives_min[k])
 
             cost = w1 * obj_f_normalized[0] + w2 * obj_f_normalized[1] + w3 * obj_f_normalized[2] - w4 * \
-                   obj_f_normalized[3] - w5 * obj_f_normalized[4] + w6 * obj_f_normalized[5] + w7 * obj_f_normalized[6]
+                   obj_f_normalized[3] - w5 * obj_f_normalized[4]
             cost_solution.append((solution, cost))
     cost_solution = sorted(cost_solution, key=lambda x: x[1], reverse=True)
     return cost_solution
@@ -605,164 +565,164 @@ def test_memetic():
     # test memetic
     # print("Test memetic")
     # initialize services
-    # service | CPU | MEM | DISK | PRIORITY | deadline
-    services = np.array([[0.12, 0.2, 0.2, 0, 10, 200, 5000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 5000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 2000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 23000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 15000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 5000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 5000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 1500],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 4000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 4000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 5000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 5000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 15000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 15000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 15000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 15000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 5000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 8000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 8000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 9000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 9000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 15000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 2000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 5000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 15000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 4000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 3000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 5000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 5000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 10000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 10000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 10000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 10000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 10000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 10000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 10000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 10000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 10000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 15000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 15000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 15000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 15000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 15000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 15000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 15000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 15000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 15000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 15000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 18000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 18000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 18000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 18000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 18000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 18000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 18000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 18000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 18000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 18000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 18000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 18000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 18000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 18000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 18000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 18000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 18000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 18000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 18000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 18000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 18000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 18000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 18000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 18000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 18000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 18000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 18000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 18000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 18000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 18000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 20000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 20000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 20000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 20000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 20000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 20000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 20000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 20000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 20000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 20000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 20000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 20000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 20000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 20000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 20000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 20000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 20000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 20000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 20000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 20000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 10000],
-                         [0.24, 0.23, 0.1, 1, 300, 400, 10000],
-                         [0.18, 0.20, 0.32, 0, 200, 50, 10000],
-                         [0.12, 0.2, 0.2, 0, 10, 200, 10000],
+    # service | CPU | MEM | DISK | PRIORITY
+    services = np.array([[0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
+                         [0.24, 0.23, 0.1, 1, 300, 400],
+                         [0.18, 0.20, 0.32, 0, 200, 50],
+                         [0.12, 0.2, 0.2, 0, 10, 200],
                          ])
 
     # print(services)
 
     # initialize hosts
-    # host           | CPU | MEM | DISK | TIME | DISTANCE | IPT
-    hosts = np.array([[0.5, 0.24, 0.4, 2000, 500, 500, 500],
-                      [0.25, 0.4, 0.4, 500, 50, 50, 500],
-                      [0.25, 0.26, 0.2, 300, 40, 50, 500],
-                      [0.8, 0.24, 0.38, 1000, 25, 900, 500],
-                      [0.2, 0.76, 0.62, 70, 50, 400, 500],
-                      [0.6, 0.6, 0.5, 60, 1000, 30, 500],
-                      [1, 1, 1, 65, 20, 800, 700],
-                      [0.5, 0.24, 0.4, 2000, 500, 500, 700],
-                      [0.25, 0.4, 0.4, 500, 50, 50, 700],
-                      [0.25, 0.26, 0.2, 300, 40, 50, 700],
-                      [0.8, 0.24, 0.38, 1000, 25, 900, 700],
-                      [0.2, 0.76, 0.62, 70, 50, 400, 700],
-                      [0.6, 0.6, 0.5, 60, 1000, 30, 700],
-                      [1, 1, 1, 65, 20, 800, 700],
-                      [0.5, 0.24, 0.4, 2000, 500, 500, 700],
-                      [0.25, 0.4, 0.4, 500, 50, 50, 700],
-                      [0.25, 0.26, 0.2, 300, 40, 50, 700],
-                      [0.8, 0.24, 0.38, 1000, 25, 900, 700],
-                      [0.2, 0.76, 0.62, 70, 50, 400, 700],
-                      [0.6, 0.6, 0.5, 60, 1000, 30, 700],
-                      [1, 1, 1, 65, 20, 800, 700],
-                      [0.5, 0.24, 0.4, 2000, 500, 500, 700],
-                      [0.25, 0.4, 0.4, 500, 50, 50, 700],
-                      [0.25, 0.26, 0.2, 300, 415, 50, 700],
-                      [0.8, 0.24, 0.38, 1000, 25, 900, 700],
-                      [0.2, 0.76, 0.62, 70, 50, 400, 700],
-                      [0.6, 0.6, 0.5, 60, 1000, 30, 700],
-                      [1, 1, 1, 65, 20, 800, 800],
-                      [0.5, 0.24, 0.4, 2000, 500, 500, 800],
-                      [0.25, 0.4, 0.4, 500, 50, 50, 800],
-                      [0.25, 0.26, 0.2, 300, 40, 50, 800],
-                      [0.8, 0.24, 0.38, 1000, 25, 900, 800],
-                      [0.2, 0.76, 0.62, 70, 50, 400, 800],
-                      [0.6, 0.6, 0.5, 60, 1000, 30, 800],
-                      [1, 1, 1, 65, 20, 800, 800],
-                      [0.6, 0.6, 0.5, 60, 1000, 30, 800],
-                      [1, 1, 1, 65, 20, 800, 800],
-                      [0.5, 0.24, 0.4, 2000, 500, 500, 800],
-                      [0.25, 0.4, 0.4, 500, 50, 50, 800],
-                      [0.25, 0.26, 0.2, 300, 40, 50, 800],
-                      [0.8, 0.24, 0.38, 1000, 25, 900, 800],
-                      [0.2, 0.76, 0.62, 70, 50, 400, 800],
-                      [0.6, 0.6, 0.5, 60, 1000, 30, 800],
-                      [1, 1, 1, 65, 20, 800, 850],
-                      [0.5, 0.24, 0.4, 2000, 500, 500, 850],
-                      [0.25, 0.4, 0.4, 500, 50, 50, 850],
-                      [0.25, 0.26, 0.2, 300, 40, 50, 900],
-                      [0.8, 0.24, 0.38, 1000, 25, 900, 950],
-                      [0.2, 0.76, 0.62, 70, 50, 400, 1000],
+    # host           | CPU | MEM | DISK | TIME | DISTANCE
+    hosts = np.array([[0.5, 0.24, 0.4, 2000, 500, 500],
+                      [0.25, 0.4, 0.4, 500, 50, 50],
+                      [0.25, 0.26, 0.2, 300, 40, 50],
+                      [0.8, 0.24, 0.38, 1000, 25, 900],
+                      [0.2, 0.76, 0.62, 70, 50, 400],
+                      [0.6, 0.6, 0.5, 60, 1000, 30],
+                      [1, 1, 1, 65, 20, 800],
+                      [0.5, 0.24, 0.4, 2000, 500, 500],
+                      [0.25, 0.4, 0.4, 500, 50, 50],
+                      [0.25, 0.26, 0.2, 300, 40, 50],
+                      [0.8, 0.24, 0.38, 1000, 25, 900],
+                      [0.2, 0.76, 0.62, 70, 50, 400],
+                      [0.6, 0.6, 0.5, 60, 1000, 30],
+                      [1, 1, 1, 65, 20, 800],
+                      [0.5, 0.24, 0.4, 2000, 500, 500],
+                      [0.25, 0.4, 0.4, 500, 50, 50],
+                      [0.25, 0.26, 0.2, 300, 40, 50],
+                      [0.8, 0.24, 0.38, 1000, 25, 900],
+                      [0.2, 0.76, 0.62, 70, 50, 400],
+                      [0.6, 0.6, 0.5, 60, 1000, 30],
+                      [1, 1, 1, 65, 20, 800],
+                      [0.5, 0.24, 0.4, 2000, 500, 500],
+                      [0.25, 0.4, 0.4, 500, 50, 50],
+                      [0.25, 0.26, 0.2, 300, 40, 50],
+                      [0.8, 0.24, 0.38, 1000, 25, 900],
+                      [0.2, 0.76, 0.62, 70, 50, 400],
+                      [0.6, 0.6, 0.5, 60, 1000, 30],
+                      [1, 1, 1, 65, 20, 800],
+                      [0.5, 0.24, 0.4, 2000, 500, 500],
+                      [0.25, 0.4, 0.4, 500, 50, 50],
+                      [0.25, 0.26, 0.2, 300, 40, 50],
+                      [0.8, 0.24, 0.38, 1000, 25, 900],
+                      [0.2, 0.76, 0.62, 70, 50, 400],
+                      [0.6, 0.6, 0.5, 60, 1000, 30],
+                      [1, 1, 1, 65, 20, 800],
+                      [0.6, 0.6, 0.5, 60, 1000, 30],
+                      [1, 1, 1, 65, 20, 800],
+                      [0.5, 0.24, 0.4, 2000, 500, 500],
+                      [0.25, 0.4, 0.4, 500, 50, 50],
+                      [0.25, 0.26, 0.2, 300, 40, 50],
+                      [0.8, 0.24, 0.38, 1000, 25, 900],
+                      [0.2, 0.76, 0.62, 70, 50, 400],
+                      [0.6, 0.6, 0.5, 60, 1000, 30],
+                      [1, 1, 1, 65, 20, 800],
+                      [0.5, 0.24, 0.4, 2000, 500, 500],
+                      [0.25, 0.4, 0.4, 500, 50, 50],
+                      [0.25, 0.26, 0.2, 300, 40, 50],
+                      [0.8, 0.24, 0.38, 1000, 25, 900],
+                      [0.2, 0.76, 0.62, 70, 50, 400],
                       ])
 
     # introduce some hosts that are not currently running. For now just a copy of available hosts
@@ -774,12 +734,11 @@ def test_memetic():
     # num_services = 3
     # num_hosts = 5  # number of hosts may be different if we add extra during repair
     MAX_PRIORITY = 1  # max priority can be 0 or 1
-    placement = memetic_experimental7(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY, 18200)
-    print("Best placement: ", placement)
+    placement = memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY, 18200)
+    # print("Best placement: ", placement)
 
 
 # test_memetic()
-
 
 def doprofiling():
     import cProfile, pstats
