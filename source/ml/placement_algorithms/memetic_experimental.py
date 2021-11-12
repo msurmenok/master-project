@@ -583,10 +583,12 @@ def report_best_population(pareto_head, hosts, services, h_size, s_size):
 
             cost = w1 * obj_f_normalized[0] + w2 * obj_f_normalized[1] + w3 * obj_f_normalized[2] - w4 * \
                    obj_f_normalized[3] - w5 * obj_f_normalized[4]
-            cost_solution_objf.append((solution, cost))
+            cost_solution_objf.append((solution, cost, obj_f))
     best_solution = sorted(cost_solution_objf, key=lambda x: x[1], reverse=True)
+    best_solution = best_solution[0]
+    result = (best_solution[0], best_solution[2])
 
-    return (best_solution[0], best_solution[2]), solution_objf
+    return result, solution_objf
 
 
 def test_memetic():
