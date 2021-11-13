@@ -27,7 +27,6 @@ from jsonPopulation import JSONPopulation
 
 
 def main(stop_time, it, algorithm, config, folder_results, folder_data):
-    if not(config['scenario'] == 'large' and (it == 7 or it == 10)):  # TODO: remove for future experiments
         # Create topology from json
         # folder_data = '/' + folder_data
         topo = Topology()
@@ -96,8 +95,8 @@ def initialize_experiment(config, iteration, folder_results, folder_data):
         config['scenario'] + '_' + str(iteration), str(finish_time), str(services_in_fog), str(services_in_cloud)))
 
     # Memetic Algorithm
-    num_creatures = 50
-    num_generations = 500
+    num_creatures = 100
+    num_generations = 1000
 
     # Memetic Algorithm without Local Search
     start_time = time.time()  # measure time to complete
@@ -234,7 +233,7 @@ def run_simulation():
     fn = partial(run_single_experiment_mp, algorithms=algorithms, simulationDuration=simulationDuration)
 
     # with Pool(processes=8) as pool:  # for local
-    with Pool(processes=128) as pool:  # for AWS
+    with Pool(processes=8) as pool:  # for AWS
         for _ in pool.imap(fn, config_iterations):
             pass
 
@@ -257,7 +256,7 @@ def run_single_experiment(iteration, algorithms, config, simulationDuration):
     folder_data = 'data/' + 'data_' + config['scenario'] + '_' + str(iteration)
     os.makedirs(folder_results, exist_ok=True)
     os.makedirs(folder_data, exist_ok=True)
-    # initialize_experiment(config, iteration, folder_results, folder_data)
+    initialize_experiment(config, iteration, folder_results, folder_data)
     for algorithm in algorithms:
         random.seed(iteration)
         np.random.seed(iteration)
