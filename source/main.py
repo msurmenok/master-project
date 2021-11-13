@@ -28,23 +28,24 @@ from jsonPopulation import JSONPopulation
 
 def main(stop_time, it, algorithm, config, folder_results, folder_data):
     # Create topology from json
-    folder_data = '/' + folder_data
+    # folder_data = '/' + folder_data
     topo = Topology()
-    topology_json = json.load(open(os.path.dirname(__file__) + folder_data + "/netDefinition.json"))
+    topology_json = json.load(open(folder_data + "/netDefinition.json"))
     # topo.load(topology_json)
     topo.load_all_node_attr(topology_json)
     # topo.write("data_net.gexf")
 
     # create applications
-    data_app = json.load(open(os.path.dirname(__file__) + folder_data + "/appDefinition.json"))
+    data_app = json.load(open(folder_data + "/appDefinition.json"))
     apps = create_applications_from_json(data_app)
 
     # load placement algorithm
-    placementJson = json.load(open(os.path.dirname(__file__) + folder_data + "/allocDefinition" + algorithm + ".json"))
+    placementJson = json.load(open(folder_data + "/allocDefinition" + algorithm + ".json"))
     placement = JSONPlacement(name="Placement", json=placementJson)
 
+# open(os.path.dirname(__file__) + '/' + self.resultFolder + "/netDefinition.json", "w")
     # load population
-    dataPopulation = json.load(open(os.path.dirname(__file__) + folder_data + "/usersDefinition.json"))
+    dataPopulation = json.load(open(folder_data + "/usersDefinition.json"))
     pop = JSONPopulation(name="Statical", json=dataPopulation, iteration=it)
 
     # Routing algorithm
@@ -255,7 +256,7 @@ def run_single_experiment(iteration, algorithms, config, simulationDuration):
     folder_data = 'data/' + 'data_' + config['scenario'] + '_' + str(iteration)
     os.makedirs(folder_results, exist_ok=True)
     os.makedirs(folder_data, exist_ok=True)
-    initialize_experiment(config, iteration, folder_results, folder_data)
+    # initialize_experiment(config, iteration, folder_results, folder_data)
     for algorithm in algorithms:
         random.seed(iteration)
         np.random.seed(iteration)
