@@ -233,7 +233,7 @@ def run_simulation():
     fn = partial(run_single_experiment_mp, algorithms=algorithms, simulationDuration=simulationDuration)
 
     # with Pool(processes=8) as pool:  # for local
-    with Pool(processes=8) as pool:  # for AWS
+    with Pool(processes=128) as pool:  # for AWS
         for _ in pool.imap(fn, config_iterations):
             pass
 
