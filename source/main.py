@@ -27,45 +27,46 @@ from jsonPopulation import JSONPopulation
 
 
 def main(stop_time, it, algorithm, config, folder_results, folder_data):
-    # Create topology from json
-    # folder_data = '/' + folder_data
-    topo = Topology()
-    topology_json = json.load(open(folder_data + "/netDefinition.json"))
-    # topo.load(topology_json)
-    topo.load_all_node_attr(topology_json)
-    # topo.write("data_net.gexf")
+    if not(config['scenario'] == 'large' and (it == 7 or it == 10)):  # TODO: remove for future experiments
+        # Create topology from json
+        # folder_data = '/' + folder_data
+        topo = Topology()
+        topology_json = json.load(open(folder_data + "/netDefinition.json"))
+        # topo.load(topology_json)
+        topo.load_all_node_attr(topology_json)
+        # topo.write("data_net.gexf")
 
-    # create applications
-    data_app = json.load(open(folder_data + "/appDefinition.json"))
-    apps = create_applications_from_json(data_app)
+        # create applications
+        data_app = json.load(open(folder_data + "/appDefinition.json"))
+        apps = create_applications_from_json(data_app)
 
-    # load placement algorithm
-    placementJson = json.load(open(folder_data + "/allocDefinition" + algorithm + ".json"))
-    placement = JSONPlacement(name="Placement", json=placementJson)
+        # load placement algorithm
+        placementJson = json.load(open(folder_data + "/allocDefinition" + algorithm + ".json"))
+        placement = JSONPlacement(name="Placement", json=placementJson)
 
-# open(os.path.dirname(__file__) + '/' + self.resultFolder + "/netDefinition.json", "w")
-    # load population
-    dataPopulation = json.load(open(folder_data + "/usersDefinition.json"))
-    pop = JSONPopulation(name="Statical", json=dataPopulation, iteration=it)
+    # open(os.path.dirname(__file__) + '/' + self.resultFolder + "/netDefinition.json", "w")
+        # load population
+        dataPopulation = json.load(open(folder_data + "/usersDefinition.json"))
+        pop = JSONPopulation(name="Statical", json=dataPopulation, iteration=it)
 
-    # Routing algorithm
-    # selectorPath = MinimunPath()
-    selectorPath = DeviceSpeedAwareRouting()
-    # folder_results = 'results/'
-    s = Sim(topo, default_results_path=folder_results + "Results_%s_%s_%i_%i" % (
-        algorithm, config['scenario'], stop_time, it))
+        # Routing algorithm
+        # selectorPath = MinimunPath()
+        selectorPath = DeviceSpeedAwareRouting()
+        # folder_results = 'results/'
+        s = Sim(topo, default_results_path=folder_results + "Results_%s_%s_%i_%i" % (
+            algorithm, config['scenario'], stop_time, it))
 
-    for aName in apps.keys():
-        print("Deploying app: ", aName)
-        pop_app = JSONPopulation(name="Statical_%s" % aName, json={}, iteration=it)
-        data = []
-        for element in pop.data["sources"]:
-            if element['app'] == aName:
-                data.append(element)
-        pop_app.data["sources"] = data
-        s.deploy_app2(apps[aName], placement, pop_app, selectorPath)
+        for aName in apps.keys():
+            print("Deploying app: ", aName)
+            pop_app = JSONPopulation(name="Statical_%s" % aName, json={}, iteration=it)
+            data = []
+            for element in pop.data["sources"]:
+                if element['app'] == aName:
+                    data.append(element)
+            pop_app.data["sources"] = data
+            s.deploy_app2(apps[aName], placement, pop_app, selectorPath)
 
-    s.run(stop_time, show_progress_monitor=False)
+        s.run(stop_time, show_progress_monitor=False)
 
 
 def initialize_experiment(config, iteration, folder_results, folder_data):

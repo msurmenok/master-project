@@ -1,8 +1,8 @@
 configs = [
-    # {
-    #     'scenario': 'large',
-    #     'iterations': 24
-    # },
+    {
+        'scenario': 'large',
+        'iterations': 24
+    },
     {
         'scenario': 'tiny',
         'iterations': 64
