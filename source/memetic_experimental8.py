@@ -22,7 +22,7 @@ def check_feasibility_and_repair(services, individual, individual_hosts, MAX_PRI
     # add the third argument - other hosts that are not active rn but can be used
     # initialize to current hosts utilization, refresh for every creature
     hosts_utilization = np.array(individual_hosts, copy=True)
-    hosts_utilization = np.delete(hosts_utilization, (3, 4, 5), 1)
+    hosts_utilization = np.delete(hosts_utilization, (3, 4, 5, 6), 1)
     num_services = individual.shape[0]
     feasible = True
 
@@ -85,10 +85,13 @@ def repair(services, individual, hosts_utilization, MAX_PRIORITY):
     return (individual, np.copy(hosts_utilization))
 
 
-def fitness(individual, services, hosts, user_to_host_distance, distance_to_cloud, max_priority, num_services,
-            num_hosts, num_important_services, max_surv, max_distance):
+def fitness(individual, services, hosts, user_to_host_distance, distance_to_cloud, max_priority, min_deadline,
+            max_deadline):
     priority_index = 3  # the last index (3) in services describes its priority
     time_index = 3  # index 3 in host describes how long it is available
+    deadline_diff = 1
+    if max_deadline - min_deadline > 0:
+        deadline_diff = max_deadline - min_deadline
 
     # MAX, F1 - Number of Pushed Services Maximization
     f1 = 0
@@ -119,20 +122,13 @@ def fitness(individual, services, hosts, user_to_host_distance, distance_to_clou
     # for host_index in active_hosts_indexes:
     #     f3 += hosts[int(host_index)][time_index]
 
-    # num_busy_hosts may include duplicates, used for normalization only
-    num_busy_hosts = 0
-
     for i in range(len(individual)):
         if not np.isnan(individual[i]):
-            num_busy_hosts += 1
             f3 += hosts[int(individual[i])][time_index]
 
     # MIN, F4
     # Host Distance Minimization
-    location_index = 4  # index 4 in host describes the location of the host
     f4 = 0
-    # for host_index in active_hosts_indexes:
-    #     f4 += hosts[int(host_index)][location_index]
 
     for i in range(len(individual)):
         if not np.isnan(individual[i]):
@@ -143,6 +139,9 @@ def fitness(individual, services, hosts, user_to_host_distance, distance_to_clou
     # MIN, F5
     # Active Hosts Minimization
     f5 = len(active_hosts_indexes)
+
+    # service: [cpu, ram, storage, priority, x, y, deadline]
+    # host: [cpu, ram, storage, time_availability, x, y, ipt]
 
     # MAX, F6
     # Prioritize placement of services with smallest deadline on fog
@@ -163,9 +162,9 @@ def fitness(individual, services, hosts, user_to_host_distance, distance_to_clou
     for i in range(len(individual)):
         if not np.isnan(individual[i]):
             f7 += hosts[int(individual[i])][ipt_index]
+
     objectives = np.array([f1, f2, f3, f4, f5, f6, f7])
     return objectives
-
 
 # local search
 def local_search(population, utilization, hosts, services, number_of_individuals, h_size, s_size):
@@ -426,7 +425,7 @@ def population_evolution(P, Q, objectives_functions_P, objectives_functions_Q, f
 def memetic_experimental8(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY, distance_to_cloud):
     num_services = len(services)
     num_hosts = len(hosts)
-    num_objective_functions = 5
+    num_objective_functions = 7
     SELECTION_PERCENT = 0.5
 
     # calculate distance between each user (who requested service) and host using x, y coordinates
@@ -459,18 +458,19 @@ def memetic_experimental8(num_creatures, NUM_GENERATIONS, services, hosts, MAX_P
 
     # parameters to normalize fitness function
     priority_index = 3  # the last index (3) in services describes its priority
-    time_index = 3  # index 3 in host describes how long it is available
+    deadline_index = 6  # index 3 in host describes how long it is available
     num_important_services = services[(services[:, priority_index] == MAX_PRIORITY)]
     num_important_services, _ = num_important_services.shape
-    max_surv = (hosts.max(axis=0))
-    max_surv = max_surv[time_index]
-    max_distance = np.amax(user_to_host_distance)
+    services_max = (services.max(axis=0))
+    services_min = (services.min(axis=0))
+    deadline_max = services_max[deadline_index]
+    deadline_min = services_min[deadline_index]
 
     # calculate the cost of each objective function for each solution
     objectives_functions_P = np.zeros((num_creatures, num_objective_functions))
     for i in range(num_creatures):
         fitness_score = fitness(P[i], services, hosts, user_to_host_distance, distance_to_cloud, MAX_PRIORITY,
-                                num_services, num_hosts, num_important_services, max_surv, max_distance)
+                                deadline_min, deadline_max)
         objectives_functions_P[i] = fitness_score
 
     # calculate the non-dominated fronts
@@ -515,7 +515,7 @@ def memetic_experimental8(num_creatures, NUM_GENERATIONS, services, hosts, MAX_P
         # calculate the cost of each objective function for each solution
         for i in range(num_creatures):
             fitness_score = fitness(Q[i], services, hosts, user_to_host_distance, distance_to_cloud, MAX_PRIORITY,
-                                    num_services, num_hosts, num_important_services, max_surv, max_distance)
+                                    deadline_min, deadline_max)
             objectives_functions_Q[i] = fitness_score
         # calculate the non-dominated fronts
         fronts_Q = non_dominated_sorting(objectives_functions_Q, num_creatures)
@@ -589,164 +589,164 @@ def test_memetic():
     # test memetic
     # print("Test memetic")
     # initialize services
-    # service | CPU | MEM | DISK | PRIORITY
-    services = np.array([[0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
-                         [0.24, 0.23, 0.1, 1, 300, 400],
-                         [0.18, 0.20, 0.32, 0, 200, 50],
-                         [0.12, 0.2, 0.2, 0, 10, 200],
+    # service | CPU | MEM | DISK | PRIORITY | deadline
+    services = np.array([[0.12, 0.2, 0.2, 0, 10, 200, 5000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 5000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 2000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 23000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 15000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 5000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 5000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 1500],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 4000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 4000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 5000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 5000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 15000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 15000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 15000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 15000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 5000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 8000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 8000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 9000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 9000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 15000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 2000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 5000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 15000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 4000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 3000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 5000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 5000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 10000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 10000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 10000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 10000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 10000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 10000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 10000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 10000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 10000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 15000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 15000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 15000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 15000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 15000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 15000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 15000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 15000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 15000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 15000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 18000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 18000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 18000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 18000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 18000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 18000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 18000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 18000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 18000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 18000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 18000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 18000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 18000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 18000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 18000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 18000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 18000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 18000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 18000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 18000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 18000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 18000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 18000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 18000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 18000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 18000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 18000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 18000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 18000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 18000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 20000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 20000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 20000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 20000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 20000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 20000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 20000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 20000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 20000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 20000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 20000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 20000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 20000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 20000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 20000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 20000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 20000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 20000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 20000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 20000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 10000],
+                         [0.24, 0.23, 0.1, 1, 300, 400, 10000],
+                         [0.18, 0.20, 0.32, 0, 200, 50, 10000],
+                         [0.12, 0.2, 0.2, 0, 10, 200, 10000],
                          ])
 
     # print(services)
 
     # initialize hosts
-    # host           | CPU | MEM | DISK | TIME | DISTANCE
-    hosts = np.array([[0.5, 0.24, 0.4, 2000, 500, 500],
-                      [0.25, 0.4, 0.4, 500, 50, 50],
-                      [0.25, 0.26, 0.2, 300, 40, 50],
-                      [0.8, 0.24, 0.38, 1000, 25, 900],
-                      [0.2, 0.76, 0.62, 70, 50, 400],
-                      [0.6, 0.6, 0.5, 60, 1000, 30],
-                      [1, 1, 1, 65, 20, 800],
-                      [0.5, 0.24, 0.4, 2000, 500, 500],
-                      [0.25, 0.4, 0.4, 500, 50, 50],
-                      [0.25, 0.26, 0.2, 300, 40, 50],
-                      [0.8, 0.24, 0.38, 1000, 25, 900],
-                      [0.2, 0.76, 0.62, 70, 50, 400],
-                      [0.6, 0.6, 0.5, 60, 1000, 30],
-                      [1, 1, 1, 65, 20, 800],
-                      [0.5, 0.24, 0.4, 2000, 500, 500],
-                      [0.25, 0.4, 0.4, 500, 50, 50],
-                      [0.25, 0.26, 0.2, 300, 40, 50],
-                      [0.8, 0.24, 0.38, 1000, 25, 900],
-                      [0.2, 0.76, 0.62, 70, 50, 400],
-                      [0.6, 0.6, 0.5, 60, 1000, 30],
-                      [1, 1, 1, 65, 20, 800],
-                      [0.5, 0.24, 0.4, 2000, 500, 500],
-                      [0.25, 0.4, 0.4, 500, 50, 50],
-                      [0.25, 0.26, 0.2, 300, 40, 50],
-                      [0.8, 0.24, 0.38, 1000, 25, 900],
-                      [0.2, 0.76, 0.62, 70, 50, 400],
-                      [0.6, 0.6, 0.5, 60, 1000, 30],
-                      [1, 1, 1, 65, 20, 800],
-                      [0.5, 0.24, 0.4, 2000, 500, 500],
-                      [0.25, 0.4, 0.4, 500, 50, 50],
-                      [0.25, 0.26, 0.2, 300, 40, 50],
-                      [0.8, 0.24, 0.38, 1000, 25, 900],
-                      [0.2, 0.76, 0.62, 70, 50, 400],
-                      [0.6, 0.6, 0.5, 60, 1000, 30],
-                      [1, 1, 1, 65, 20, 800],
-                      [0.6, 0.6, 0.5, 60, 1000, 30],
-                      [1, 1, 1, 65, 20, 800],
-                      [0.5, 0.24, 0.4, 2000, 500, 500],
-                      [0.25, 0.4, 0.4, 500, 50, 50],
-                      [0.25, 0.26, 0.2, 300, 40, 50],
-                      [0.8, 0.24, 0.38, 1000, 25, 900],
-                      [0.2, 0.76, 0.62, 70, 50, 400],
-                      [0.6, 0.6, 0.5, 60, 1000, 30],
-                      [1, 1, 1, 65, 20, 800],
-                      [0.5, 0.24, 0.4, 2000, 500, 500],
-                      [0.25, 0.4, 0.4, 500, 50, 50],
-                      [0.25, 0.26, 0.2, 300, 40, 50],
-                      [0.8, 0.24, 0.38, 1000, 25, 900],
-                      [0.2, 0.76, 0.62, 70, 50, 400],
+    # host           | CPU | MEM | DISK | TIME | DISTANCE | IPT
+    hosts = np.array([[0.5, 0.24, 0.4, 2000, 500, 500, 500],
+                      [0.25, 0.4, 0.4, 500, 50, 50, 500],
+                      [0.25, 0.26, 0.2, 300, 40, 50, 500],
+                      [0.8, 0.24, 0.38, 1000, 25, 900, 500],
+                      [0.2, 0.76, 0.62, 70, 50, 400, 500],
+                      [0.6, 0.6, 0.5, 60, 1000, 30, 500],
+                      [1, 1, 1, 65, 20, 800, 700],
+                      [0.5, 0.24, 0.4, 2000, 500, 500, 700],
+                      [0.25, 0.4, 0.4, 500, 50, 50, 700],
+                      [0.25, 0.26, 0.2, 300, 40, 50, 700],
+                      [0.8, 0.24, 0.38, 1000, 25, 900, 700],
+                      [0.2, 0.76, 0.62, 70, 50, 400, 700],
+                      [0.6, 0.6, 0.5, 60, 1000, 30, 700],
+                      [1, 1, 1, 65, 20, 800, 700],
+                      [0.5, 0.24, 0.4, 2000, 500, 500, 700],
+                      [0.25, 0.4, 0.4, 500, 50, 50, 700],
+                      [0.25, 0.26, 0.2, 300, 40, 50, 700],
+                      [0.8, 0.24, 0.38, 1000, 25, 900, 700],
+                      [0.2, 0.76, 0.62, 70, 50, 400, 700],
+                      [0.6, 0.6, 0.5, 60, 1000, 30, 700],
+                      [1, 1, 1, 65, 20, 800, 700],
+                      [0.5, 0.24, 0.4, 2000, 500, 500, 700],
+                      [0.25, 0.4, 0.4, 500, 50, 50, 700],
+                      [0.25, 0.26, 0.2, 300, 415, 50, 700],
+                      [0.8, 0.24, 0.38, 1000, 25, 900, 700],
+                      [0.2, 0.76, 0.62, 70, 50, 400, 700],
+                      [0.6, 0.6, 0.5, 60, 1000, 30, 700],
+                      [1, 1, 1, 65, 20, 800, 800],
+                      [0.5, 0.24, 0.4, 2000, 500, 500, 800],
+                      [0.25, 0.4, 0.4, 500, 50, 50, 800],
+                      [0.25, 0.26, 0.2, 300, 40, 50, 800],
+                      [0.8, 0.24, 0.38, 1000, 25, 900, 800],
+                      [0.2, 0.76, 0.62, 70, 50, 400, 800],
+                      [0.6, 0.6, 0.5, 60, 1000, 30, 800],
+                      [1, 1, 1, 65, 20, 800, 800],
+                      [0.6, 0.6, 0.5, 60, 1000, 30, 800],
+                      [1, 1, 1, 65, 20, 800, 800],
+                      [0.5, 0.24, 0.4, 2000, 500, 500, 800],
+                      [0.25, 0.4, 0.4, 500, 50, 50, 800],
+                      [0.25, 0.26, 0.2, 300, 40, 50, 800],
+                      [0.8, 0.24, 0.38, 1000, 25, 900, 800],
+                      [0.2, 0.76, 0.62, 70, 50, 400, 800],
+                      [0.6, 0.6, 0.5, 60, 1000, 30, 800],
+                      [1, 1, 1, 65, 20, 800, 850],
+                      [0.5, 0.24, 0.4, 2000, 500, 500, 850],
+                      [0.25, 0.4, 0.4, 500, 50, 50, 850],
+                      [0.25, 0.26, 0.2, 300, 40, 50, 900],
+                      [0.8, 0.24, 0.38, 1000, 25, 900, 950],
+                      [0.2, 0.76, 0.62, 70, 50, 400, 1000],
                       ])
 
     # introduce some hosts that are not currently running. For now just a copy of available hosts
@@ -758,8 +758,9 @@ def test_memetic():
     # num_services = 3
     # num_hosts = 5  # number of hosts may be different if we add extra during repair
     MAX_PRIORITY = 1  # max priority can be 0 or 1
-    placement = memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY, 18200)
-    # print("Best placement: ", placement)
+    placement = memetic_experimental8(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY, 18200)
+    print("Best placement: ", placement)
+
 
 
 # test_memetic()

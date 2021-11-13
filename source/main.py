@@ -221,16 +221,34 @@ def run_simulation():
                   'Memetic']
     # algorithms = ['FirstFitRAM', 'FirstFitTime']
     # configs are from ExperimentConfigs file
+    config_iterations = []
     for config in configs:
-        fn = partial(run_single_experiment, algorithms=algorithms, config=config, simulationDuration=simulationDuration)
-        # for iteration in range(config['iterations']):
-        #     fn(iteration)
-        # with Pool(processes=8) as pool:  # for local
-        with Pool(processes=128) as pool:  # for AWS
-            for _ in pool.imap(fn, range(config['iterations'])):
-                pass
+        for iteration in range(config['iterations']):
+            config_iterations.append((config, iteration))
+
+    # from itertools import product
+    # config_iterations = list(product(configs, range(config['iterations'])))
+
+    fn = partial(run_single_experiment_mp, algorithms=algorithms, simulationDuration=simulationDuration)
+
+    # with Pool(processes=8) as pool:  # for local
+    with Pool(processes=8) as pool:  # for AWS
+        for _ in pool.imap(fn, config_iterations):
+            pass
+
+    # for config in configs:
+    #     fn = partial(run_single_experiment, algorithms=algorithms, config=config, simulationDuration=simulationDuration)
+    #     # for iteration in range(config['iterations']):
+    #     #     fn(iteration)
+    #     # with Pool(processes=8) as pool:  # for local
+    #     with Pool(processes=128) as pool:  # for AWS
+    #         for _ in pool.imap(fn, range(config['iterations'])):
+    #             pass
     print("Simulation Done!")
 
+def run_single_experiment_mp(config_iteration, algorithms, simulationDuration):
+    config, iteration = config_iteration
+    run_single_experiment(iteration, algorithms, config, simulationDuration)
 
 def run_single_experiment(iteration, algorithms, config, simulationDuration):
     folder_results = 'results/current/results_' + config['scenario'] + '_' + str(iteration)
