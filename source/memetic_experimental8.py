@@ -423,7 +423,7 @@ def population_evolution(P, Q, objectives_functions_P, objectives_functions_Q, f
     return P
 
 
-def memetic_algorithm(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY, distance_to_cloud):
+def memetic_experimental8(num_creatures, NUM_GENERATIONS, services, hosts, MAX_PRIORITY, distance_to_cloud):
     num_services = len(services)
     num_hosts = len(hosts)
     num_objective_functions = 5

@@ -20,7 +20,7 @@ from memetic_experimental5 import memetic_experimental5
 from memetic_experimental6 import memetic_experimental6
 from memetic_experimental7 import memetic_experimental7
 from memetic_experimental8 import memetic_experimental8
-from memetic_experimental9 import memetic_experimental9
+# from memetic_experimental9 import memetic_experimental9
 
 
 class ExperimentSetup:
