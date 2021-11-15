@@ -16,6 +16,14 @@ def filter_by_deadline(row, a):
         return False
 
 
+def filter_by_importance(row, a, max_priority):
+    priority = a[row['app']]['module'][0]['PRIORITY']
+    if priority == max_priority:
+        return True
+    else:
+        return False
+
+
 def compute_times_df(ldf):
     ldf["time_latency"] = ldf["time_reception"] - ldf["time_emit"]
     ldf["time_wait"] = ldf["time_in"] - ldf["time_reception"]
@@ -43,14 +51,14 @@ algorithms = ['FirstFitRAM', 'FirstFitTime', 'MemeticWithoutLocalSearch', 'Memet
 #         'scenario': 'medium',
 #         'iterations': 24
 #     },
-    # {
-    #     'scenario': 'large',
-    #     'iterations': 16
-    # },
-    # {
-    #     'scenario': 'verylarge',
-    #     'iterations': 5
-    # }
+# {
+#     'scenario': 'large',
+#     'iterations': 16
+# },
+# {
+#     'scenario': 'verylarge',
+#     'iterations': 5
+# }
 # ]
 
 for config in configs:
@@ -62,23 +70,27 @@ for config in configs:
     results_folder = "results/current/"
 
     # open files to store the result and write headers
-    results_analysis_file = results_folder + "analysis.csv"
-    results_analysis_average_file = results_folder + "analysis_averages.csv"
+    results_analysis_file = results_folder + "analysis2.csv"
+    results_analysis_average_file = results_folder + "analysis_averages2.csv"
 
     file = open(results_analysis_file, 'a+')  # save completion time
     file.write(
         'scenario,# experiment,algorithm,mean latency,min latency,max latency,average total response,num requests, num failed requests\n')
     file_averages = open(results_analysis_average_file, 'a+')
     file_averages.write(
-        'scenario,# experiments,algorithm,average average latency, median average latency, 75 perc average latency, average average total response, median average total response, 75 perc average total response,avg request failed to total ratio,median request failed to total ratio,avg number succ requests,median number succ requests,average calculation time,average num services on fog\n')
+        'scenario,# experiments,algorithm,average average latency, median average latency,average average total response, median average total response,std total response,avg request failed to total ratio,std failed ratio,important services average average total response,std important services total response,avg important requests failed to total ratio,std important failed ratio,num hosts used,average calculation time,average num services on fog\n')
 
     for algorithm in algorithms:
         avg_latency = []
         avg_totalresponse = []
+        important_totalresponse = []
         num_requests = []
         num_failed_requests = []
+        num_important_requests = []
+        num_important_failed_requests = []
         calculation_time = []
         services_on_fog = []
+        num_unique_hosts = []
 
         for i in range(num_of_experiments):
             # calculate total time taken by each algorithm:
@@ -103,7 +115,7 @@ for config in configs:
             appDefinitionFile = open(data_folder + '/appDefinition.json')
             appDefinition = json.load(appDefinitionFile)
 
-            # create partially applied function and provide information abot app deadlines for this experiment
+            # create partially applied function and provide information about app deadlines for this experiment
             filter_fn = partial(filter_by_deadline, a=appDefinition)
 
             df = pd.read_csv(
@@ -113,6 +125,22 @@ for config in configs:
 
             num_requests.append(len(df))
 
+            # num of fog devices used
+            # find what is cloud id
+            netDefinitionFile = open(data_folder + '/netDefinition.json')
+            netDefinition = json.load(netDefinitionFile)
+            # find all unique hosts
+            all_hosts = df["TOPO.dst"]
+            unique_hosts = all_hosts.unique()
+            total_num_unique_hosts = 0
+
+            for host in unique_hosts:
+                if netDefinition["entity"][host]['type'] == 'CLOUD':
+                    print('host is Cloud')
+                if netDefinition["entity"][host]['type'] != 'CLOUD':
+                    total_num_unique_hosts += 1
+
+            num_unique_hosts.append(total_num_unique_hosts)
             # create mask to keep only requests that were completed within a deadline
             df_mask = df.apply(filter_fn, axis=1)
 
@@ -123,6 +151,20 @@ for config in configs:
 
             avg_latency.append(df_within_deadline["time_latency"].mean())
             avg_totalresponse.append(df_within_deadline["time_total_response"].mean())
+
+            # filter by request with the maximum priority
+            max_priority = 1
+            filter_fn_2 = partial(filter_by_importance, a=appDefinition, max_priority=max_priority)
+            df_important_mask = df.apply(filter_fn_2, axis=1)
+            df_important = df[df_important_mask]
+            num_important_requests.append(len(df_important))
+
+            df_important_failed_mask = df_important.apply(filter_fn, axis=1)
+            df_important_failed = df_important_failed_mask[df_important_failed_mask == False]
+            num_important_failed_requests.append(len(df_important_failed))
+
+            important_totalresponse.append(df_important["time_total_response"].mean())
+
 
             file.write('%s,experiment_%d,%s,%f,%f,%f,%f,%d,%d\n' % (
                 config['scenario'], i, algorithm,
@@ -140,33 +182,51 @@ for config in configs:
         plt.savefig(results_folder + 'histograms/' + config['scenario'] + '_totalresponse_' + algorithm + '.png')
         plt.clf()
 
+        # latency
         avg_avg_latency = float(np.mean(avg_latency))
         p50_avg_latency = float(np.percentile(avg_latency, 50))
-        p75_avg_latency = float(np.percentile(avg_latency, 75))
 
+        # total response
         avg_avg_totalresponse = float(np.mean(avg_totalresponse))
+        std_totalresponse = float(np.std(avg_totalresponse))
         p50_avg_totalresponse = float(np.percentile(avg_totalresponse, 50))
-        p75_avg_totalresponse = float(np.percentile(avg_totalresponse, 75))
 
+        # total response for important services
+        avg_avg_important_totalresponse = float(np.mean(important_totalresponse))
+        std_important_totalresponse = float(np.std(important_totalresponse))
+
+        important_request_failed_to_total_ratio = float(np.mean(np.array(num_important_failed_requests) / np.array(num_important_requests)))
+        std_important_failed_to_total_ratio = float(np.std(np.mean(np.array(num_important_failed_requests) / np.array(num_important_requests))))
+
+        # failed requests ratio (both important and not important)
         request_failed_to_total_ratio = float(np.mean(np.array(num_failed_requests) / np.array(num_requests)))
-        p50_request_failed_to_total_ratio = float(
-            np.percentile(np.array(num_failed_requests) / np.array(num_requests), 50))
+        std_failed_to_total_ratio = float(np.std(np.mean(np.array(num_failed_requests) / np.array(num_requests))))
+        average_num_hosts = float(np.mean(num_unique_hosts))
 
-        avg_num_succ_requests = float(np.mean(np.array(num_requests) - np.array(num_failed_requests)))
-        p50_num_succ_requests = float(np.percentile(np.array(num_requests) - np.array(num_failed_requests), 50))
 
-        file_averages.write('%s,%d,%s,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n' % (
+
+# scenario,# experiments,algorithm,average average latency, median average latency,average average total response,
+        # median average total response,std total response,
+        # avg request failed to total ratio,std failed ratio,
+        # important services average average total response,std important services total response,
+
+        # avg important requests failed to total ratio,std important failed ratio,
+        #
+        # num hosts used,average calculation time,average num services on fog\n')
+        file_averages.write('%s,%d,%s,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n' % (
             config['scenario'], num_of_experiments, algorithm,
             avg_avg_latency,
             p50_avg_latency,
-            p75_avg_latency,
             avg_avg_totalresponse,
             p50_avg_totalresponse,
-            p75_avg_totalresponse,
+            std_totalresponse,
             request_failed_to_total_ratio,
-            p50_request_failed_to_total_ratio,
-            avg_num_succ_requests,
-            p50_num_succ_requests,
+            std_failed_to_total_ratio,
+            avg_avg_important_totalresponse,
+            std_important_totalresponse,
+            important_request_failed_to_total_ratio,
+            std_important_failed_to_total_ratio,
+            average_num_hosts,
             sum(calculation_time) / num_of_experiments, sum(services_on_fog) / num_of_experiments))
     file.close()
     file_averages.close()
