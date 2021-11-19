@@ -87,7 +87,9 @@ class ExperimentSetup:
         # Users and IoT devices
         # App's popularity. This value define the probability of source request an application
         self.func_REQUESTPROB = lambda: random.random() / 4
-        self.func_USERREQRAT = lambda: random.randint(200, 1000)  # MS
+        # self.func_USERREQRAT = lambda: random.randint(200, 1000)  # MS
+        self.func_USERREQRAT = lambda: random.randint(200, 600)  # MS FOR SMALL LOAD
+        # self.func_USERREQRAT = lambda: random.randint(600, 1000)  # MS FOR HEAVY LOAD
 
 
         # random.seed(15612357)
