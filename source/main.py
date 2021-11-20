@@ -258,13 +258,13 @@ def run_single_experiment_mp(config_iteration, algorithms, simulationDuration):
 
 
 def run_single_experiment(iteration, algorithms, config, simulationDuration):
-    high_traffic = 'high_traffic'
+    high_traffic = 'high_traffic' # done
     # slow_traffic = 'slow_traffic'  # done
 
     weak_fog_devices = 'small_hosts'  # fog devices with below average resources
     powerful_fog_devices = 'big_hosts'  # fog devices with above average resources
 
-    current_setting = high_traffic
+    current_setting = weak_fog_devices  # third experiment
 
     folder_results = 'results_' + current_setting + '/current/results_' + config['scenario'] + '_' + str(iteration)
     folder_data = 'data_' + current_setting + '/' + 'data_' + config['scenario'] + '_' + str(iteration)
