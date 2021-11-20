@@ -259,12 +259,15 @@ def run_single_experiment_mp(config_iteration, algorithms, simulationDuration):
 
 def run_single_experiment(iteration, algorithms, config, simulationDuration):
     high_traffic = 'high_traffic'
-    slow_traffic = 'slow_traffic'
+    # slow_traffic = 'slow_traffic'  # done
 
-    current_setting = slow_traffic
+    weak_fog_devices = 'small_hosts'  # fog devices with below average resources
+    powerful_fog_devices = 'big_hosts'  # fog devices with above average resources
 
-    folder_results = 'results_' + slow_traffic + '/current/results_' + config['scenario'] + '_' + str(iteration)
-    folder_data = 'data_' + slow_traffic + '/' + 'data_' + config['scenario'] + '_' + str(iteration)
+    current_setting = high_traffic
+
+    folder_results = 'results_' + current_setting + '/current/results_' + config['scenario'] + '_' + str(iteration)
+    folder_data = 'data_' + current_setting + '/' + 'data_' + config['scenario'] + '_' + str(iteration)
     os.makedirs(folder_results, exist_ok=True)
     os.makedirs(folder_data, exist_ok=True)
     initialize_experiment(config, iteration, folder_results, folder_data)
