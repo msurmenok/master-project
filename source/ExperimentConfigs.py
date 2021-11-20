@@ -8,11 +8,11 @@ configs = [
     #     'iterations': 64
     # },
     {
-        'scenario': 'small',
+        'scenario': 'medium',
         'iterations': 100
     },
     {
-        'scenario': 'medium',
+        'scenario': 'small',
         'iterations': 100
     },
     # {
