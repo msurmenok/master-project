@@ -166,6 +166,7 @@ def fitness(individual, services, hosts, user_to_host_distance, distance_to_clou
     objectives = np.array([f1, f2, f3, f4, f5, f6, f7])
     return objectives
 
+
 # local search
 def local_search(population, utilization, hosts, services, number_of_individuals, h_size, s_size):
     iterator_individual = 0
@@ -532,8 +533,7 @@ def memetic_experimental8(num_creatures, NUM_GENERATIONS, services, hosts, MAX_P
     # report the best
     # cost_solution = report_best_population(P, distance_to_cloud, hosts, num_creatures, num_objective_functions,
     #                                        services, user_to_host_distance, MAX_PRIORITY)
-    cost_solution = report_best_population(pareto_head, hosts, services, num_hosts, num_services)
-    return cost_solution[0][0]
+    return report_best_population(pareto_head, hosts, services, num_hosts, num_services)
 
 
 def report_best_population(pareto_head, hosts, services, h_size, s_size):
@@ -565,7 +565,14 @@ def report_best_population(pareto_head, hosts, services, h_size, s_size):
     fronts_best_P = non_dominated_sorting(objective_functions_best_P, pareto_size)
     utilization_best_P = load_utilization(best_P, hosts, services, pareto_size, h_size, s_size)
 
-    cost_solution = list()
+    solution_objf = list()
+
+    # all solutions
+    for i in range(pareto_size):
+        solution_objf.append((best_P[i], objective_functions_best_P[i]))
+
+    # find the best solution
+    cost_solution_objf = list()
     for i in range(pareto_size):
         if (fronts_best_P[i] == 1):
             solution = best_P[i]
@@ -580,9 +587,12 @@ def report_best_population(pareto_head, hosts, services, h_size, s_size):
 
             cost = w1 * obj_f_normalized[0] + w2 * obj_f_normalized[1] + w3 * obj_f_normalized[2] - w4 * \
                    obj_f_normalized[3] - w5 * obj_f_normalized[4] + w6 * obj_f_normalized[5] + w7 * obj_f_normalized[6]
-            cost_solution.append((solution, cost))
-    cost_solution = sorted(cost_solution, key=lambda x: x[1], reverse=True)
-    return cost_solution
+            cost_solution_objf.append((solution, cost, obj_f))
+    best_solution = sorted(cost_solution_objf, key=lambda x: x[1], reverse=True)
+    best_solution = best_solution[0]
+    result = (best_solution[0], best_solution[2])
+
+    return result, solution_objf
 
 
 def test_memetic():
@@ -762,8 +772,7 @@ def test_memetic():
     print("Best placement: ", placement)
 
 
-
-# test_memetic()
+test_memetic()
 
 def doprofiling():
     import cProfile, pstats
