@@ -567,9 +567,17 @@ def report_best_population(pareto_head, hosts, services, h_size, s_size):
 
     solution_objf = list()
 
-    # all solutions
+    # all solutions, starting from best
     for i in range(pareto_size):
-        solution_objf.append((best_P[i], objective_functions_best_P[i]))
+        if fronts_best_P[i] == 1:
+            solution_objf.append((best_P[i], objective_functions_best_P[i]))
+
+    for i in range(pareto_size):
+        if 1 < fronts_best_P[i] < 4:
+            solution_objf.append((best_P[i], objective_functions_best_P[i]))
+    for i in range(pareto_size):
+        if fronts_best_P[i] > 3:
+            solution_objf.append((best_P[i], objective_functions_best_P[i]))
 
     # find the best solution
     cost_solution_objf = list()
@@ -772,7 +780,7 @@ def test_memetic():
     print("Best placement: ", placement)
 
 
-test_memetic()
+# test_memetic()
 
 def doprofiling():
     import cProfile, pstats

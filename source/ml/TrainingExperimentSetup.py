@@ -585,7 +585,7 @@ class ExperimentSetup:
                                    'MemeticExperimental7', folder_results)
 
         if len(solutions) > dataset_size:
-            solutions = random.sample(solutions, dataset_size - 1)
+            solutions = solutions[0: dataset_size - 1]
         for i in range(len(solutions)):
             # i + 1 because we already our best experiment take index 0, so we start from 1 here
             self.create_json_placement(solutions[i], index_to_module_app, index_to_fogid, i + 1, iteration,
@@ -647,7 +647,7 @@ class ExperimentSetup:
                                    'MemeticExperimental8', folder_results)
 
         if len(solutions) > dataset_size:
-            solutions = random.sample(solutions, dataset_size - 1)
+            solutions = solutions[0: dataset_size - 1]
         for i in range(len(solutions)):
             # i + 1 because we already our best experiment take index 0, so we start from 1 here
             self.create_json_placement(solutions[i], index_to_module_app, index_to_fogid, i + 1, iteration,
