@@ -491,7 +491,8 @@ class ExperimentSetup:
         userFile.write(json.dumps(userJson))
         userFile.close()
 
-    def create_json_placement(self, solution, index_to_module_app, index_to_fogid, index, iteration, algorithm_name):
+    def create_json_placement(self, solution, index_to_module_app, index_to_fogid, index, iteration, algorithm_name,
+                              folder_results):
         placement, cost_functions = solution
         servicesInFog = 0
         servicesInCloud = 0
@@ -513,20 +514,24 @@ class ExperimentSetup:
             myAllocationList.append(myAllocation)
 
         # write cost functions
-        cost_functions_file = open('input/cost_functions_' + str(iteration) + '.csv', 'a')
+        # input_folder = 'input'
+        if not os.path.exists(folder_results):
+            os.makedirs(folder_results)
+
+        cost_functions_file = open(folder_results + 'cost_functions_' + str(iteration) + '.csv', 'a')
         cost_functions_file.write('%s,%s_%i_%i,%f,%f,%f,%f,%f,%f,%f,%i,%i\n' % (
             algorithm_name, algorithm_name, iteration, index, cost_functions[0], cost_functions[1], cost_functions[2],
             cost_functions[3], cost_functions[4], cost_functions[5], cost_functions[6], servicesInFog, servicesInCloud))
 
         allAlloc['initialAllocation'] = myAllocationList
         allocationFile = open(
-            self.resultFolder + "/allocDefinition_" + algorithm_name + "_" + str(self.iteration) + "_" + str(
+            self.resultFolder + "/allocDefinition_" + algorithm_name + "_" + str(iteration) + "_" + str(
                 index) + ".json", "w")
         allocationFile.write(json.dumps(allAlloc))
         allocationFile.close()
         return servicesInFog, servicesInCloud
 
-    def memeticExperimentalPlacement7(self, num_creatures, num_generations, iteration, dataset_size):
+    def memeticExperimentalPlacement7(self, num_creatures, num_generations, iteration, dataset_size, folder_results):
         index_to_fogid = {}
         index_to_module_app = {}
 
@@ -577,17 +582,17 @@ class ExperimentSetup:
                                                          hosts_resources,
                                                          self.MAX_PRIORITY, self.DISTANCE_TO_CLOUD)
         self.create_json_placement(best_solution, index_to_module_app, index_to_fogid, 0, iteration,
-                                   'MemeticExperimental7')
+                                   'MemeticExperimental7', folder_results)
 
         if len(solutions) > dataset_size:
             solutions = random.sample(solutions, dataset_size - 1)
         for i in range(len(solutions)):
             # i + 1 because we already our best experiment take index 0, so we start from 1 here
             self.create_json_placement(solutions[i], index_to_module_app, index_to_fogid, i + 1, iteration,
-                                       'MemeticExperimental7')
+                                       'MemeticExperimental7', folder_results)
         print("Memetic experimental initial allocation performed!")
 
-    def memeticExperimentalPlacement8(self, num_creatures, num_generations, iteration, dataset_size):
+    def memeticExperimentalPlacement8(self, num_creatures, num_generations, iteration, dataset_size, folder_results):
         index_to_fogid = {}
         index_to_module_app = {}
 
@@ -639,12 +644,12 @@ class ExperimentSetup:
                                                          self.MAX_PRIORITY, self.DISTANCE_TO_CLOUD)
 
         self.create_json_placement(best_solution, index_to_module_app, index_to_fogid, 0, iteration,
-                                   'MemeticExperimental8')
+                                   'MemeticExperimental8', folder_results)
 
         if len(solutions) > dataset_size:
             solutions = random.sample(solutions, dataset_size - 1)
         for i in range(len(solutions)):
             # i + 1 because we already our best experiment take index 0, so we start from 1 here
             self.create_json_placement(solutions[i], index_to_module_app, index_to_fogid, i + 1, iteration,
-                                       'MemeticExperimental8')
+                                       'MemeticExperimental8', folder_results)
         print("Memetic experimental initial allocation performed!")

@@ -13,6 +13,12 @@ source/results/
 source/data_nov10/
 source/data_nov12/
 source/data_slow_traffic/
+data_big_hosts/
+data_high_traffic/
+data_small_hosts/
+results_high_traffic/
+results_slow_traffic/
+results_small_hosts/
 
 
 

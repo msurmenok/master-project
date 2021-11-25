@@ -54,8 +54,8 @@ def main(stop_time, it, index, algorithm, config, folder_results, folder_data):
     # selectorPath = MinimunPath()
     selectorPath = DeviceSpeedAwareRouting()
     # folder_results = 'results/'
-    s = Sim(topo, default_results_path=folder_results + "Results_%s_%s_%i_%i" % (
-        algorithm, config['scenario'], it, index))
+    s = Sim(topo, default_results_path=folder_results + "Results_%s_%i_%i" % (
+        algorithm, it, index))
 
     for aName in apps.keys():
         print("Deploying app: ", aName)
@@ -78,12 +78,12 @@ def initialize_experiment(config, iteration, folder_results, folder_data):
     sg.userGeneration()
 
     # Calling placement algorithms
-    dataset_size = 100
-    num_creatures = 10
-    num_generations = 100
+    dataset_size = 200
+    num_creatures = 100
+    num_generations = 1000
 
-    sg.memeticExperimentalPlacement7(num_creatures, num_generations, iteration, dataset_size)
-    sg.memeticExperimentalPlacement8(num_creatures, num_generations, iteration, dataset_size)
+    sg.memeticExperimentalPlacement7(num_creatures, num_generations, iteration, dataset_size, folder_results)
+    sg.memeticExperimentalPlacement8(num_creatures, num_generations, iteration, dataset_size, folder_results)
 
 
 def run_simulation():
@@ -102,7 +102,7 @@ def run_simulation():
         fn = partial(run_single_experiment, algorithms=algorithms, config=config, simulationDuration=simulationDuration)
         # for iteration in range(config['iterations']):
         #     fn(iteration)
-        with Pool(processes=8) as pool:
+        with Pool(processes=128) as pool:
             for _ in pool.imap(fn, range(config['iterations'])):
                 pass
     print("Simulation Done!")
@@ -110,20 +110,22 @@ def run_simulation():
 
 def run_single_experiment(iteration, algorithms, config, simulationDuration):
     folder_results = 'results/current/'
+    folder_input = 'input/'
     folder_data = 'data/' + 'data_' + config['scenario'] + '_' + str(iteration)
     os.makedirs(folder_results, exist_ok=True)
     os.makedirs(folder_data, exist_ok=True)
-    initialize_experiment(config, iteration, folder_results, folder_data)
+    os.makedirs(folder_input, exist_ok=True)
+    initialize_experiment(config, iteration, folder_input, folder_data)
     # add one more for loop to run one of the many placements for a single algorithm
 
-    # for algorithm in algorithms:
-    #     random.seed(iteration)
-    #     np.random.seed(iteration)
-    #     num_solutions = 100  # may be different size
-    #     for i in range(num_solutions):
-    #         main(stop_time=simulationDuration, it=iteration, index=i, algorithm=algorithm, config=config,
-    #              folder_results=folder_results,
-    #              folder_data=folder_data)
+    for algorithm in algorithms:
+        random.seed(iteration)
+        np.random.seed(iteration)
+        num_solutions = 100  # may be different size
+        for i in range(num_solutions):
+            main(stop_time=simulationDuration, it=iteration, index=i, algorithm=algorithm, config=config,
+                 folder_results=folder_results,
+                 folder_data=folder_data)
 
 
 if __name__ == '__main__':

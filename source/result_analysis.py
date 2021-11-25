@@ -33,9 +33,7 @@ def compute_times_df(ldf):
 
 
 # MemeticExperimental == MemeticExperimental1 in 'algorithm_time.csv'
-algorithms = ['FirstFitRAM', 'FirstFitTime', 'MemeticWithoutLocalSearch', 'MemeticExperimental',
-              'MemeticExperimental2', 'MemeticExperimental3', 'MemeticExperimental4', 'MemeticExperimental5',
-              'MemeticExperimental6', 'MemeticExperimental7', 'MemeticExperimental8', 'Memetic']
+algorithms = ['MemeticExperimental2', 'MemeticExperimental6', 'MemeticExperimental8', 'Memetic']
 
 # TODO change back to configs when large experiment are done
 # configs2 = [
@@ -67,7 +65,10 @@ for config in configs:
     # simulation_time = 10000
     simulation_time = 100000
     num_of_experiments = config['iterations']
-    results_folder = "results/current/"
+    # results_folder = "results_slow_traffic/current/"
+    # results_folder = "results_high_traffic/current/"
+    results_folder = "results_small_hosts/current/"
+    results_folder = "results_big_hosts/current/"
 
     # open files to store the result and write headers
     results_analysis_file = results_folder + "analysis2.csv"
@@ -111,7 +112,10 @@ for config in configs:
                     break
 
             # pull the information about application deadlines
-            data_folder = "data/data_" + config['scenario'] + "_" + str(i)
+            # data_folder = "data_slow_traffic/data_" + config['scenario'] + "_" + str(i)
+            # data_folder = "data_high_traffic/data_" + config['scenario'] + "_" + str(i)
+            # data_folder = "data_small_hosts/data_" + config['scenario'] + "_" + str(i)
+            data_folder = "data_big_hosts/data_" + config['scenario'] + "_" + str(i)
             appDefinitionFile = open(data_folder + '/appDefinition.json')
             appDefinition = json.load(appDefinitionFile)
 
@@ -165,7 +169,6 @@ for config in configs:
 
             important_totalresponse.append(df_important["time_total_response"].mean())
 
-
             file.write('%s,experiment_%d,%s,%f,%f,%f,%f,%d,%d\n' % (
                 config['scenario'], i, algorithm,
                 df_within_deadline["time_latency"].mean(),
@@ -176,6 +179,10 @@ for config in configs:
                 len(df_failed_requests)))
 
         plt.hist(avg_latency, bins=20)
+
+        if not os.path.exists(results_folder + 'histograms/'):
+            os.makedirs(results_folder + 'histograms/')
+
         plt.savefig(results_folder + 'histograms/' + config['scenario'] + '_latency_' + algorithm + '.png')
         plt.clf()
         plt.hist(avg_totalresponse, bins=20)
@@ -195,17 +202,17 @@ for config in configs:
         avg_avg_important_totalresponse = float(np.mean(important_totalresponse))
         std_important_totalresponse = float(np.std(important_totalresponse))
 
-        important_request_failed_to_total_ratio = float(np.mean(np.array(num_important_failed_requests) / np.array(num_important_requests)))
-        std_important_failed_to_total_ratio = float(np.std(np.mean(np.array(num_important_failed_requests) / np.array(num_important_requests))))
+        important_request_failed_to_total_ratio = float(
+            np.mean(np.array(num_important_failed_requests) / np.array(num_important_requests)))
+        std_important_failed_to_total_ratio = float(
+            np.std(np.mean(np.array(num_important_failed_requests) / np.array(num_important_requests))))
 
         # failed requests ratio (both important and not important)
         request_failed_to_total_ratio = float(np.mean(np.array(num_failed_requests) / np.array(num_requests)))
         std_failed_to_total_ratio = float(np.std(np.mean(np.array(num_failed_requests) / np.array(num_requests))))
         average_num_hosts = float(np.mean(num_unique_hosts))
 
-
-
-# scenario,# experiments,algorithm,average average latency, median average latency,average average total response,
+        # scenario,# experiments,algorithm,average average latency, median average latency,average average total response,
         # median average total response,std total response,
         # avg request failed to total ratio,std failed ratio,
         # important services average average total response,std important services total response,
