@@ -28,7 +28,6 @@ from jsonPopulation import JSONPopulation
 
 def main(stop_time, it, index, algorithm, config, folder_results, folder_data):
     # Create topology from json
-    folder_data = '/' + folder_data
     topo = Topology()
     topology_json = json.load(open(folder_data + "/netDefinition.json"))
     # topo.load(topology_json)
@@ -41,13 +40,12 @@ def main(stop_time, it, index, algorithm, config, folder_results, folder_data):
 
     # load placement algorithm
     # allocDefinition_" + algorithm_name + "_" + str(self.iteration) + "_" + str(index) + ".json
-    placementJson = json.load(open(
-        os.path.dirname(__file__) + folder_data + "/allocDefinition_" + algorithm + "_" + str(it) + "_" + str(
+    placementJson = json.load(open(folder_data + "/allocDefinition_" + algorithm + "_" + str(it) + "_" + str(
             index) + ".json"))
     placement = JSONPlacement(name="Placement", json=placementJson)
 
     # load population
-    dataPopulation = json.load(open(os.path.dirname(__file__) + folder_data + "/usersDefinition.json"))
+    dataPopulation = json.load(open(folder_data + "/usersDefinition.json"))
     pop = JSONPopulation(name="Statical", json=dataPopulation, iteration=it)
 
     # Routing algorithm
