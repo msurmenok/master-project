@@ -30,13 +30,13 @@ def main(stop_time, it, index, algorithm, config, folder_results, folder_data):
     # Create topology from json
     folder_data = '/' + folder_data
     topo = Topology()
-    topology_json = json.load(open(os.path.dirname(__file__) + folder_data + "/netDefinition.json"))
+    topology_json = json.load(open(folder_data + "/netDefinition.json"))
     # topo.load(topology_json)
     topo.load_all_node_attr(topology_json)
     # topo.write("data_net.gexf")
 
     # create applications
-    data_app = json.load(open(os.path.dirname(__file__) + folder_data + "/appDefinition.json"))
+    data_app = json.load(open(folder_data + "/appDefinition.json"))
     apps = create_applications_from_json(data_app)
 
     # load placement algorithm
