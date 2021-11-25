@@ -121,7 +121,7 @@ def run_single_experiment(iteration, algorithms, config, simulationDuration):
     for algorithm in algorithms:
         random.seed(iteration)
         np.random.seed(iteration)
-        num_solutions = 100  # may be different size
+        num_solutions = 200  # may be different size
         for i in range(num_solutions):
             main(stop_time=simulationDuration, it=iteration, index=i, algorithm=algorithm, config=config,
                  folder_results=folder_results,
