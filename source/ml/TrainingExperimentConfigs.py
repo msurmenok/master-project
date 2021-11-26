@@ -5,7 +5,7 @@ configs = [
     # },
     {
         'scenario': 'small',
-        'iterations': 256
+        'iterations': 128
     },
     # {
     #     'scenario': 'medium',
