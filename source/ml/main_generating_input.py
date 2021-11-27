@@ -54,6 +54,8 @@ def main(stop_time, it, index, algorithm, config, folder_results, folder_data):
     # folder_results = 'results/'
     s = Sim(topo, default_results_path=folder_results + "Results_%s_%i_%i" % (
         algorithm, it, index))
+    # remove link file, we do not use it for ML and it takes a lot of disk space
+    os.remove(folder_results + 'Results_' + algorithm + '_' + str(it) + '_' + str(index) + '_link.csv')
 
     for aName in apps.keys():
         print("Deploying app: ", aName)
