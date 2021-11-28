@@ -782,4 +782,4 @@ def doprofiling():
 
 # doprofiling()
 
-test_memetic()
+# test_memetic()
