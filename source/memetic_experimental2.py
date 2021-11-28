@@ -296,8 +296,8 @@ def is_dominated(solution, a, b):
 
 class Pareto_element:
     def __init__(self, solution, cost):
-        self.solution = solution
-        self.cost = cost
+        self.solution = np.copy(solution)
+        self.cost = np.copy(cost)
 
     def __str__(self):
         return str(self.solution)
@@ -306,12 +306,12 @@ class Pareto_element:
         return str(self.solution)
 
     def __eq__(self, other):
-        return np.array_equal(self.solution, other.solution)
+        return np.array_equal(self.solution, other.solution, equal_nan=True)
 
 
 def pareto_insert(pareto_head, individual, objectives_functions):
     pareto_element = Pareto_element(solution=individual, cost=objectives_functions)
-    if pareto_element not in pareto_head:
+    if not any(np.array_equal(pareto_element.solution, e.solution, equal_nan=True) for e in pareto_head):
         pareto_head.append(pareto_element)
     return pareto_head
 
@@ -475,15 +475,11 @@ def memetic_experimental2(num_creatures, NUM_GENERATIONS, services, hosts, MAX_P
     # identificators for the crossover parents
     father = []
     mother = []
-    Q = initialize(num_creatures, num_services, num_hosts)
-    utilization_Q = load_utilization(Q, hosts, services, num_creatures, num_hosts, num_services);
-    objectives_functions_Q = np.zeros((num_creatures, num_objective_functions))
-    fronts_Q = []
 
     generation = 0
     while (generation < NUM_GENERATIONS):
         generation += 1
-
+        objectives_functions_Q = np.zeros((num_creatures, num_objective_functions))
         Q = initialize(num_creatures, num_services, num_hosts)
         father = selection(fronts_P, num_creatures, SELECTION_PERCENT)
         mother = selection(fronts_P, num_creatures, SELECTION_PERCENT)
@@ -572,6 +568,7 @@ def report_best_population(pareto_head, hosts, services, h_size, s_size):
             cost_solution.append((solution, cost))
     cost_solution = sorted(cost_solution, key=lambda x: x[1], reverse=True)
     return cost_solution
+
 
 def test_memetic():
     # test memetic

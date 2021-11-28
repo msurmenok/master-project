@@ -513,6 +513,9 @@ class ExperimentSetup:
             myAllocation['id_resource'] = resource_id
             myAllocationList.append(myAllocation)
 
+        # if cost_functions[0] != servicesInFog:
+        #     print(solution)
+
         # write cost functions
         # input_folder = 'input'
         if not os.path.exists(folder_results):
