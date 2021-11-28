@@ -33,7 +33,12 @@ def compute_times_df(ldf):
 
 
 # MemeticExperimental == MemeticExperimental1 in 'algorithm_time.csv'
-algorithms = ['MemeticExperimental2', 'MemeticExperimental6', 'MemeticExperimental8', 'Memetic']
+# algorithms = ['MemeticExperimental2', 'MemeticExperimental6', 'MemeticExperimental8', 'Memetic']
+algorithms = ['FirstFitRAM', 'FirstFitTime', 'MemeticWithoutLocalSearch', 'MemeticExperimental',
+                  'MemeticExperimental2', 'MemeticExperimental3', 'MemeticExperimental4', 'MemeticExperimental5',
+                  'MemeticExperimental6', 'MemeticExperimental7', 'MemeticExperimental8',
+                  'Memetic']
+
 
 # TODO change back to configs when large experiment are done
 # configs2 = [
@@ -67,8 +72,9 @@ for config in configs:
     num_of_experiments = config['iterations']
     # results_folder = "results_slow_traffic/current/"
     # results_folder = "results_high_traffic/current/"
-    results_folder = "results_small_hosts/current/"
-    results_folder = "results_big_hosts/current/"
+    # results_folder = "results_small_hosts/current/"
+    # results_folder = "results_big_hosts/current/"
+    results_folder = 'results_average/current/'
 
     # open files to store the result and write headers
     results_analysis_file = results_folder + "analysis2.csv"
@@ -115,7 +121,8 @@ for config in configs:
             # data_folder = "data_slow_traffic/data_" + config['scenario'] + "_" + str(i)
             # data_folder = "data_high_traffic/data_" + config['scenario'] + "_" + str(i)
             # data_folder = "data_small_hosts/data_" + config['scenario'] + "_" + str(i)
-            data_folder = "data_big_hosts/data_" + config['scenario'] + "_" + str(i)
+            # data_folder = "data_big_hosts/data_" + config['scenario'] + "_" + str(i)
+            data_folder = 'data_average/data_' + config['scenario'] + '_' + str(i)
             appDefinitionFile = open(data_folder + '/appDefinition.json')
             appDefinition = json.load(appDefinitionFile)
 
@@ -227,12 +234,12 @@ for config in configs:
             avg_avg_totalresponse,
             p50_avg_totalresponse,
             std_totalresponse,
-            request_failed_to_total_ratio,
-            std_failed_to_total_ratio,
+            request_failed_to_total_ratio * 100,
+            std_failed_to_total_ratio * 100,
             avg_avg_important_totalresponse,
             std_important_totalresponse,
-            important_request_failed_to_total_ratio,
-            std_important_failed_to_total_ratio,
+            important_request_failed_to_total_ratio * 100,
+            std_important_failed_to_total_ratio * 100,
             average_num_hosts,
             sum(calculation_time) / num_of_experiments, sum(services_on_fog) / num_of_experiments))
     file.close()
