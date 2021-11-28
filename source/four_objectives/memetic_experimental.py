@@ -753,7 +753,7 @@ def test_memetic():
     # print("Best placement: ", placement)
 
 
-test_memetic()
+# test_memetic()
 
 def doprofiling():
     import cProfile, pstats
