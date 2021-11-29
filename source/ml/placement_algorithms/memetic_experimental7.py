@@ -892,7 +892,7 @@ def test_memetic():
     print("Best placement: ", best_placement)
 
 
-test_memetic()
+# test_memetic()
 
 
 def doprofiling():
