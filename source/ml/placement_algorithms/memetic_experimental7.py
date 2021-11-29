@@ -340,7 +340,7 @@ class Pareto_element:
 
 def pareto_insert(pareto_head, individual, objectives_functions):
     pareto_element = Pareto_element(solution=individual, cost=objectives_functions)
-    assert not pareto_element.check_f1()
+    # assert not pareto_element.check_f1()
     # TODO: change in all algorithms in main package
     if not any(np.array_equal(pareto_element.solution, e.solution, equal_nan=True) for e in pareto_head):
         pareto_head.append(pareto_element)
@@ -506,21 +506,21 @@ def memetic_experimental7(num_creatures, NUM_GENERATIONS, services, hosts, MAX_P
     # Update set of nondominated solutions
     pareto_head = list()
     for i in range(num_creatures):
-        for el in pareto_head:
-            assert not el.check_f1()
+        # for el in pareto_head:
+        #     assert not el.check_f1()
         if fronts_P[i] == 1:
             pareto_head = pareto_insert(pareto_head, P[i], objectives_functions_P[i])
-            for el in pareto_head:
-                assert not el.check_f1()
+            # for el in pareto_head:
+            #     assert not el.check_f1()
 
     # identificators for the crossover parents
     father = []
     mother = []
     # Q = initialize(num_creatures, num_services, num_hosts)
     # utilization_Q = load_utilization(Q, hosts, services, num_creatures, num_hosts, num_services)
-
-    for el in pareto_head:
-        assert not el.check_f1()
+    #
+    # for el in pareto_head:
+    #     assert not el.check_f1()
 
     generation = 0
     while (generation < NUM_GENERATIONS):
@@ -528,15 +528,15 @@ def memetic_experimental7(num_creatures, NUM_GENERATIONS, services, hosts, MAX_P
 
         objectives_functions_Q = np.zeros((num_creatures, num_objective_functions))
 
-        for el in pareto_head:
-            assert not el.check_f1(), f'Generation {generation}'
+        # for el in pareto_head:
+        #     assert not el.check_f1(), f'Generation {generation}'
 
         Q = initialize(num_creatures, num_services, num_hosts)
         father = selection(fronts_P, num_creatures, SELECTION_PERCENT)
         mother = selection(fronts_P, num_creatures, SELECTION_PERCENT)
 
-        for el in pareto_head:
-            assert not el.check_f1(), f'Generation {generation}'
+        # for el in pareto_head:
+        #     assert not el.check_f1(), f'Generation {generation}'
 
         # crossover and mutation of solutions
         Q = crossover(Q, father, mother, num_services)
@@ -544,8 +544,8 @@ def memetic_experimental7(num_creatures, NUM_GENERATIONS, services, hosts, MAX_P
         # load the utilization of physical machines and network links of all individuals/solutions
         utilization_Q = load_utilization(Q, hosts, services, num_creatures, num_hosts, num_services);
 
-        for el in pareto_head:
-            assert not el.check_f1(), f'Generation {generation}'
+        # for el in pareto_head:
+        #     assert not el.check_f1(), f'Generation {generation}'
 
         # repair
         for i in range(num_creatures):
@@ -553,73 +553,73 @@ def memetic_experimental7(num_creatures, NUM_GENERATIONS, services, hosts, MAX_P
             Q[i] = result[0]
             utilization_Q[i] = result[1]
 
-        for el in pareto_head:
-            assert not el.check_f1(), f'Generation {generation}'
+        # for el in pareto_head:
+        #     assert not el.check_f1(), f'Generation {generation}'
 
         Q, utilization_Q = local_search(Q, utilization_Q, hosts, services, num_creatures, num_hosts, num_services,
                                         service_to_closest_host)
 
-        for el in pareto_head:
-            assert not el.check_f1(), f'Generation {generation}'
+        # for el in pareto_head:
+        #     assert not el.check_f1(), f'Generation {generation}'
 
-        old_pareto_head_solution = []
-        old_pareto_head_cost = []
-        for el in pareto_head:
-            old_pareto_head_solution.append(np.copy(el.solution))
-            old_pareto_head_cost.append(np.copy(el.cost))
+        # old_pareto_head_solution = []
+        # old_pareto_head_cost = []
+        # for el in pareto_head:
+        #     old_pareto_head_solution.append(np.copy(el.solution))
+        #     old_pareto_head_cost.append(np.copy(el.cost))
 
-        def test():
-            new_pareto_head_solution = []
-            new_pareto_head_cost = []
-            for el in pareto_head:
-                new_pareto_head_solution.append(np.copy(el.solution))
-                new_pareto_head_cost.append(np.copy(el.cost))
+        # def test():
+        #     new_pareto_head_solution = []
+        #     new_pareto_head_cost = []
+        #     for el in pareto_head:
+        #         new_pareto_head_solution.append(np.copy(el.solution))
+        #         new_pareto_head_cost.append(np.copy(el.cost))
 
-            assert len(old_pareto_head_solution) == len(old_pareto_head_cost) == len(new_pareto_head_solution) == len(new_pareto_head_cost)
+            # assert len(old_pareto_head_solution) == len(old_pareto_head_cost) == len(new_pareto_head_solution) == len(new_pareto_head_cost)
 
-            for i in range(len(old_pareto_head_solution)):
-                if not np.array_equal(old_pareto_head_solution[i], new_pareto_head_solution[i], equal_nan=True):
-                    pass
-                if not np.array_equal(old_pareto_head_cost[i], new_pareto_head_cost[i], equal_nan=True):
-                    pass
+            # for i in range(len(old_pareto_head_solution)):
+            #     if not np.array_equal(old_pareto_head_solution[i], new_pareto_head_solution[i], equal_nan=True):
+            #         pass
+            #     if not np.array_equal(old_pareto_head_cost[i], new_pareto_head_cost[i], equal_nan=True):
+            #         pass
 
-        test()
+        # test()
 
         # calculate the cost of each objective function for each solution
         for i in range(num_creatures):
             fitness_score = fitness(Q[i], services, hosts, user_to_host_distance, distance_to_cloud, MAX_PRIORITY,
                                     deadline_min, deadline_max)
-            test()
+            # test()
             objectives_functions_Q[i] = fitness_score
-            test()
+            # test()
 
 
 
-        for el in pareto_head:
-            assert not el.check_f1(), f'Generation {generation}'
+        # for el in pareto_head:
+        #     assert not el.check_f1(), f'Generation {generation}'
 
         # calculate the non-dominated fronts
         fronts_Q = non_dominated_sorting(objectives_functions_Q, num_creatures)
         # Update set of nondominated solutions Pc from Qt
         for i in range(num_creatures):
-            for el in pareto_head:
-                assert not el.check_f1(), f'Generation {generation}'
+            # for el in pareto_head:
+            #     assert not el.check_f1(), f'Generation {generation}'
 
             if fronts_Q[i] == 1:
                 pareto_head = pareto_insert(pareto_head, Q[i], objectives_functions_Q[i])
 
-            for el in pareto_head:
-                assert not el.check_f1(), f'Generation {generation}'
+            # for el in pareto_head:
+            #     assert not el.check_f1(), f'Generation {generation}'
 
-        for el in pareto_head:
-            assert not el.check_f1(), f'Generation {generation}'
+        # for el in pareto_head:
+        #     assert not el.check_f1(), f'Generation {generation}'
 
         #     Pt = fitness selection from Pt ∪ Qt
         P = population_evolution(P, Q, objectives_functions_P, objectives_functions_Q, fronts_P, num_creatures,
                                  num_services)
 
-        for el in pareto_head:
-            assert not el.check_f1(), f'Generation {generation}'
+        # for el in pareto_head:
+        #     assert not el.check_f1(), f'Generation {generation}'
 
 
 
@@ -633,8 +633,8 @@ def memetic_experimental7(num_creatures, NUM_GENERATIONS, services, hosts, MAX_P
 
 
 def report_best_population(pareto_head, hosts, services, h_size, s_size):
-    for el in pareto_head:
-        el.check_f1()
+    # for el in pareto_head:
+    #     el.check_f1()
 
     pareto_size = len(pareto_head)
 
@@ -699,18 +699,18 @@ def report_best_population(pareto_head, hosts, services, h_size, s_size):
     best_solution = best_solution[0]
     result = (best_solution[0], best_solution[2])
 
-    def check(pair):
-        s, o = pair
-        true_f1 = 0
-        for i in range(len(s)):
-            if not np.isnan(s[i]):
-                true_f1 += 1
-        reported_f1 = o[0]
-        assert true_f1 == reported_f1
-
-    check(best_solution)
-    for pair in solution_objf:
-        check(pair)
+    # def check(pair):
+    #     s, o = pair
+    #     true_f1 = 0
+    #     for i in range(len(s)):
+    #         if not np.isnan(s[i]):
+    #             true_f1 += 1
+    #     reported_f1 = o[0]
+    #     assert true_f1 == reported_f1
+    #
+    # check(best_solution)
+    # for pair in solution_objf:
+    #     check(pair)
 
     return result, solution_objf
 
