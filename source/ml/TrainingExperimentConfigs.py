@@ -3,14 +3,14 @@ configs = [
     #     'scenario': 'tiny',
     #     'iterations': 2
     # },
-    # {
-    #     'scenario': 'small',
-    #     'iterations': 128
-    # },
     {
-        'scenario': 'medium',
-        'iterations': 128
+        'scenario': 'small',
+        'iterations': 256
     },
+    # {
+    #     'scenario': 'medium',
+    #     'iterations': 256
+    # },
     # {
     #     'scenario': 'large',
     #     'iterations': 8

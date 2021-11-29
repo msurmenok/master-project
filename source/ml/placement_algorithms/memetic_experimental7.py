@@ -429,8 +429,7 @@ def population_evolution(P, Q, objectives_functions_P, objectives_functions_Q, f
             if fronts_PQ[iterator] == actual_pareto and iterator_P < number_of_individuals:
                 if objectives_functions_PQ[iterator][0] != 0 or objectives_functions_PQ[iterator][1] != 0 or \
                         objectives_functions_PQ[iterator][2] != 0 or objectives_functions_PQ[iterator][2] != 0 or \
-                        objectives_functions_PQ[iterator][3] != 0 or objectives_functions_PQ[iterator][4] != 0 or \
-                        objectives_functions_PQ[iterator][5] != 0 or objectives_functions_PQ[iterator][6] != 0:
+                        objectives_functions_PQ[iterator][3] != 0 or objectives_functions_PQ[iterator][4] != 0:
                     objectives_functions_P[iterator_P][0] = objectives_functions_PQ[iterator][0]
                     objectives_functions_P[iterator_P][1] = objectives_functions_PQ[iterator][1]
                     objectives_functions_P[iterator_P][2] = objectives_functions_PQ[iterator][2]
