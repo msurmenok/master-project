@@ -69,19 +69,19 @@ class ExperimentSetup:
 
 
         # Small devices setting
-        self.func_NODESPEED = lambda: random.randint(500, 750)
-        self.func_NODE_PROCESS_RESOURCES = lambda: round(random.uniform(0.20, 1.1), 2)
-        # MB RAM #random distribution for the resources of the fog devices
-        self.func_NODE_RAM_RESOURECES = lambda: random.uniform(10, 17.5)
-        self.func_NODE_STORAGE_RESOURCES = lambda: random.randint(20, 110)  # MB STORAGE
+        # self.func_NODESPEED = lambda: random.randint(500, 750)
+        # self.func_NODE_PROCESS_RESOURCES = lambda: round(random.uniform(0.20, 1.1), 2)
+        # # MB RAM #random distribution for the resources of the fog devices
+        # self.func_NODE_RAM_RESOURECES = lambda: random.uniform(10, 17.5)
+        # self.func_NODE_STORAGE_RESOURCES = lambda: random.randint(20, 110)  # MB STORAGE
 
         # Big devices setting
         # INTS / MS #random distribution for the speed of the fog devices
-        # self.func_NODESPEED = lambda: random.randint(750, 1000)
-        # self.func_NODE_PROCESS_RESOURCES = lambda: round(random.uniform(1.1, 2.00), 2)
-        # # MB RAM #random distribution for the resources of the fog devices
-        # self.func_NODE_RAM_RESOURECES = lambda: random.uniform(17.5, 25)
-        # self.func_NODE_STORAGE_RESOURCES = lambda: random.randint(110, 200)  # MB STORAGE
+        self.func_NODESPEED = lambda: random.randint(750, 1000)
+        self.func_NODE_PROCESS_RESOURCES = lambda: round(random.uniform(1.1, 2.00), 2)
+        # MB RAM #random distribution for the resources of the fog devices
+        self.func_NODE_RAM_RESOURECES = lambda: random.uniform(17.5, 25)
+        self.func_NODE_STORAGE_RESOURCES = lambda: random.randint(110, 200)  # MB STORAGE
 
         # Apps and Services
         self.TOTAL_APPS_NUMBER = 10
