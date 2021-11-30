@@ -33,11 +33,11 @@ def compute_times_df(ldf):
 
 
 # MemeticExperimental == MemeticExperimental1 in 'algorithm_time.csv'
-# algorithms = ['MemeticExperimental2', 'MemeticExperimental6', 'MemeticExperimental8', 'Memetic']
-algorithms = ['FirstFitRAM', 'FirstFitTime', 'MemeticWithoutLocalSearch', 'MemeticExperimental',
-                  'MemeticExperimental2', 'MemeticExperimental3', 'MemeticExperimental4', 'MemeticExperimental5',
-                  'MemeticExperimental6', 'MemeticExperimental7', 'MemeticExperimental8',
-                  'Memetic']
+algorithms = ['MemeticExperimental2', 'MemeticExperimental6', 'MemeticExperimental8', 'Memetic']
+# algorithms = ['FirstFitRAM', 'FirstFitTime', 'MemeticWithoutLocalSearch', 'MemeticExperimental',
+#                   'MemeticExperimental2', 'MemeticExperimental3', 'MemeticExperimental4', 'MemeticExperimental5',
+#                   'MemeticExperimental6', 'MemeticExperimental7', 'MemeticExperimental8',
+#                   'Memetic']
 
 
 # TODO change back to configs when large experiment are done
