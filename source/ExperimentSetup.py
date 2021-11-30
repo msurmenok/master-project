@@ -61,19 +61,19 @@ class ExperimentSetup:
 
         # Average setting
         # INTS / MS #random distribution for the speed of the fog devices
-        self.func_NODESPEED = lambda: random.randint(500, 1000)
-        self.func_NODE_PROCESS_RESOURCES = lambda: round(random.uniform(0.20, 2.00), 2)
-        # MB RAM #random distribution for the resources of the fog devices
-        self.func_NODE_RAM_RESOURECES = lambda: random.randint(10, 25)
-        self.func_NODE_STORAGE_RESOURCES = lambda: random.randint(20, 200)  # MB STORAGE
+        # self.func_NODESPEED = lambda: random.randint(500, 1000)
+        # self.func_NODE_PROCESS_RESOURCES = lambda: round(random.uniform(0.20, 2.00), 2)
+        # # MB RAM #random distribution for the resources of the fog devices
+        # self.func_NODE_RAM_RESOURECES = lambda: random.randint(10, 25)
+        # self.func_NODE_STORAGE_RESOURCES = lambda: random.randint(20, 200)  # MB STORAGE
 
 
         # Small devices setting
-        # self.func_NODESPEED = lambda: random.randint(500, 750)
-        # self.func_NODE_PROCESS_RESOURCES = lambda: round(random.uniform(0.20, 1.1), 2)
-        # # MB RAM #random distribution for the resources of the fog devices
-        # self.func_NODE_RAM_RESOURECES = lambda: random.uniform(10, 17.5)
-        # self.func_NODE_STORAGE_RESOURCES = lambda: random.randint(20, 110)  # MB STORAGE
+        self.func_NODESPEED = lambda: random.randint(500, 750)
+        self.func_NODE_PROCESS_RESOURCES = lambda: round(random.uniform(0.20, 1.1), 2)
+        # MB RAM #random distribution for the resources of the fog devices
+        self.func_NODE_RAM_RESOURECES = lambda: random.uniform(10, 17.5)
+        self.func_NODE_STORAGE_RESOURCES = lambda: random.randint(20, 110)  # MB STORAGE
 
         # Big devices setting
         # INTS / MS #random distribution for the speed of the fog devices
@@ -105,9 +105,9 @@ class ExperimentSetup:
         # Users and IoT devices
         # App's popularity. This value define the probability of source request an application
         self.func_REQUESTPROB = lambda: random.random() / 4
-        # self.func_USERREQRAT = lambda: random.randint(200, 1000)  # MS FOR AVERAGE LOAD
+        self.func_USERREQRAT = lambda: random.randint(200, 1000)  # MS FOR AVERAGE LOAD
         # self.func_USERREQRAT = lambda: random.randint(200, 600)  # MS FOR HEAVY LOAD
-        self.func_USERREQRAT = lambda: random.randint(600, 1000)  # MS FOR SMALL LOAD
+        # self.func_USERREQRAT = lambda: random.randint(600, 1000)  # MS FOR SMALL LOAD
 
 
         # random.seed(15612357)
