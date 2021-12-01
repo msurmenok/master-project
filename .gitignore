@@ -20,6 +20,10 @@ results_high_traffic/
 results_slow_traffic/
 results_small_hosts/
 source/data_average/
+source/data_average2/
+source/four_objectives/data_four_obj/
+source/ml/dataset_data_small_0/
+        source/ml/train_model.py
 
 
 

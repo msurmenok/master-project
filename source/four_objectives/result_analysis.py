@@ -33,9 +33,9 @@ def compute_times_df(ldf):
 
 
 # MemeticExperimental == MemeticExperimental1 in 'algorithm_time.csv'
-# algorithms = ['MemeticExperimental2', 'MemeticExperimental6', 'MemeticExperimental8', 'Memetic']
-algorithms = ['MemeticExperimental', 'MemeticExperimental2', 'MemeticExperimental6', 'MemeticExperimental7',
-              'MemeticExperimental8', 'Memetic']
+algorithms = ['MemeticExperimental2', 'MemeticExperimental6', 'MemeticExperimental7','MemeticExperimental8', 'Memetic']
+# algorithms = ['MemeticExperimental', 'MemeticExperimental2', 'MemeticExperimental6', 'MemeticExperimental7',
+#               'MemeticExperimental8', 'Memetic']
 
 # TODO change back to configs when large experiment are done
 # configs2 = [
@@ -71,7 +71,8 @@ for config in configs:
     # results_folder = "results_high_traffic/current/"
     # results_folder = "results_small_hosts/current/"
     # results_folder = "results_big_hosts/current/"
-    results_folder = 'results_average/current/'
+    # results_folder = 'results_average/current/'
+    results_folder = 'results_four_obj/current/'
 
     # open files to store the result and write headers
     results_analysis_file = results_folder + "analysis2.csv"
@@ -119,7 +120,7 @@ for config in configs:
             # data_folder = "data_high_traffic/data_" + config['scenario'] + "_" + str(i)
             # data_folder = "data_small_hosts/data_" + config['scenario'] + "_" + str(i)
             # data_folder = "data_big_hosts/data_" + config['scenario'] + "_" + str(i)
-            data_folder = 'data_average/data_' + config['scenario'] + '_' + str(i)
+            data_folder = 'data_four_obj/data_' + config['scenario'] + '_' + str(i)
             appDefinitionFile = open(data_folder + '/appDefinition.json')
             appDefinition = json.load(appDefinitionFile)
 

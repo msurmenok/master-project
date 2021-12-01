@@ -34,10 +34,10 @@ def compute_times_df(ldf):
 
 # MemeticExperimental == MemeticExperimental1 in 'algorithm_time.csv'
 algorithms = ['MemeticExperimental2', 'MemeticExperimental6', 'MemeticExperimental8', 'Memetic']
-# algorithms = ['FirstFitRAM', 'FirstFitTime', 'MemeticWithoutLocalSearch', 'MemeticExperimental',
-#                   'MemeticExperimental2', 'MemeticExperimental3', 'MemeticExperimental4', 'MemeticExperimental5',
-#                   'MemeticExperimental6', 'MemeticExperimental7', 'MemeticExperimental8',
-#                   'Memetic']
+algorithms = ['FirstFitRAM', 'FirstFitTime', 'MemeticWithoutLocalSearch', 'MemeticExperimental',
+                  'MemeticExperimental2', 'MemeticExperimental3', 'MemeticExperimental4', 'MemeticExperimental5',
+                  'MemeticExperimental6', 'MemeticExperimental7', 'MemeticExperimental8',
+                  'Memetic']
 
 
 # TODO change back to configs when large experiment are done
@@ -71,7 +71,7 @@ for config in configs:
     simulation_time = 100000
     num_of_experiments = config['iterations']
     # results_folder = "results_slow_traffic/current/"
-    # results_folder = "results_high_traffic/current/"
+    results_folder = "results_high_traffic/current/"
     # results_folder = "results_small_hosts/current/"
     # results_folder = "results_big_hosts/current/"
     results_folder = 'results_average/current/'
@@ -119,10 +119,10 @@ for config in configs:
 
             # pull the information about application deadlines
             # data_folder = "data_slow_traffic/data_" + config['scenario'] + "_" + str(i)
-            # data_folder = "data_high_traffic/data_" + config['scenario'] + "_" + str(i)
+            data_folder = "data_high_traffic/data_" + config['scenario'] + "_" + str(i)
             # data_folder = "data_small_hosts/data_" + config['scenario'] + "_" + str(i)
             # data_folder = "data_big_hosts/data_" + config['scenario'] + "_" + str(i)
-            data_folder = 'data_average/data_' + config['scenario'] + '_' + str(i)
+            # data_folder = 'data_average/data_' + config['scenario'] + '_' + str(i)
             appDefinitionFile = open(data_folder + '/appDefinition.json')
             appDefinition = json.load(appDefinitionFile)
 
