@@ -34,10 +34,10 @@ def compute_times_df(ldf):
 
 # MemeticExperimental == MemeticExperimental1 in 'algorithm_time.csv'
 algorithms = ['MemeticExperimental2', 'MemeticExperimental6', 'MemeticExperimental8', 'Memetic']
-algorithms = ['FirstFitRAM', 'FirstFitTime', 'MemeticWithoutLocalSearch', 'MemeticExperimental',
-                  'MemeticExperimental2', 'MemeticExperimental3', 'MemeticExperimental4', 'MemeticExperimental5',
-                  'MemeticExperimental6', 'MemeticExperimental7', 'MemeticExperimental8',
-                  'Memetic']
+# algorithms = ['FirstFitRAM', 'FirstFitTime', 'MemeticWithoutLocalSearch', 'MemeticExperimental',
+#                   'MemeticExperimental2', 'MemeticExperimental3', 'MemeticExperimental4', 'MemeticExperimental5',
+#                   'MemeticExperimental6', 'MemeticExperimental7', 'MemeticExperimental8',
+#                   'Memetic']
 
 
 # TODO change back to configs when large experiment are done
@@ -74,7 +74,7 @@ for config in configs:
     results_folder = "results_high_traffic/current/"
     # results_folder = "results_small_hosts/current/"
     # results_folder = "results_big_hosts/current/"
-    results_folder = 'results_average/current/'
+    # results_folder = 'results_average/current/'
 
     # open files to store the result and write headers
     results_analysis_file = results_folder + "analysis2.csv"

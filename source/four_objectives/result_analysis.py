@@ -33,7 +33,8 @@ def compute_times_df(ldf):
 
 
 # MemeticExperimental == MemeticExperimental1 in 'algorithm_time.csv'
-algorithms = ['MemeticExperimental2', 'MemeticExperimental6', 'MemeticExperimental7','MemeticExperimental8', 'Memetic']
+algorithms = ['MemeticExperimental', 'MemeticExperimental2', 'MemeticExperimental6', 'MemeticExperimental7',
+              'MemeticExperimental8', 'Memetic']
 # algorithms = ['MemeticExperimental', 'MemeticExperimental2', 'MemeticExperimental6', 'MemeticExperimental7',
 #               'MemeticExperimental8', 'Memetic']
 
