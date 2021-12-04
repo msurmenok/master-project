@@ -9,7 +9,7 @@ configs = [
     # },
     {
         'scenario': 'medium',
-        'iterations': 256
+        'iterations': 512
     },
     # {
     #     'scenario': 'large',

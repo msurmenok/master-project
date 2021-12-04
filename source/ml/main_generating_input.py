@@ -82,7 +82,7 @@ def initialize_experiment(config, iteration, folder_results, folder_data):
     num_creatures = 100
     num_generations = 1000
 
-    sg.memeticExperimentalPlacement7(num_creatures, num_generations, iteration, dataset_size, folder_results)
+    # sg.memeticExperimentalPlacement7(num_creatures, num_generations, iteration, dataset_size, folder_results)
     sg.memeticExperimentalPlacement8(num_creatures, num_generations, iteration, dataset_size, folder_results)
 
 
@@ -94,7 +94,8 @@ def run_simulation():
     #               'MemeticExperimental2', 'MemeticExperimental3', 'MemeticExperimental4', 'MemeticExperimental5',
     #               'MemeticExperimental6', 'MemeticExperimental7', 'MemeticExperimental8', 'MemeticExperimental9',
     #               'Memetic']
-    algorithms = ['MemeticExperimental7', 'MemeticExperimental8']
+    # algorithms = ['MemeticExperimental7', 'MemeticExperimental8']
+    algorithms = ['MemeticExperimental8']
 
     # algorithms = ['FirstFitRAM', 'FirstFitTime']
     # configs are from ExperimentConfigs file
