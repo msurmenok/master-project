@@ -251,7 +251,7 @@ def run_single_experiment(iteration, algorithms, config, simulationDuration):
 
     # average = 'average2'
 
-    current_setting = high_traffic  # third experiment
+    current_setting = weak_fog_devices  # third experiment
 
     folder_results = 'results_' + current_setting + '/current/results_' + config['scenario'] + '_' + str(iteration)
     folder_data = 'data_' + current_setting + '/' + 'data_' + config['scenario'] + '_' + str(iteration)
