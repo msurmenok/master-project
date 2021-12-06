@@ -33,36 +33,35 @@ def compute_times_df(ldf):
 
 
 # MemeticExperimental == MemeticExperimental1 in 'algorithm_time.csv'
-# algorithms = ['MemeticExperimental2', 'MemeticExperimental6', 'MemeticExperimental8', 'Memetic']
-algorithms = ['FirstFitRAM', 'FirstFitTime', 'MemeticWithoutLocalSearch', 'MemeticExperimental',
-                  'MemeticExperimental2', 'MemeticExperimental3', 'MemeticExperimental4', 'MemeticExperimental5',
-                  'MemeticExperimental6', 'MemeticExperimental7', 'MemeticExperimental8','MemeticExperimental9',
-                  'Memetic']
-
+algorithms = ['MemeticExperimental2', 'MemeticExperimental6', 'MemeticExperimental8', 'MemeticExperimental9', 'Memetic']
+# algorithms = ['FirstFitRAM', 'FirstFitTime', 'MemeticWithoutLocalSearch', 'MemeticExperimental',
+#               'MemeticExperimental2', 'MemeticExperimental3', 'MemeticExperimental4', 'MemeticExperimental5',
+#               'MemeticExperimental6', 'MemeticExperimental7', 'MemeticExperimental8', 'MemeticExperimental9',
+#               'Memetic']
 
 # TODO change back to configs when large experiment are done
-configs2 = [
-    # {
-    #         'scenario': 'tiny',
-    #         'iterations': 24
-    #     },
-    {
-        'scenario': 'small',
-        'iterations': 42
-    },
-    #     {
-    #         'scenario': 'medium',
-    #         'iterations': 24
-    #     },
-    # {
-    #     'scenario': 'large',
-    #     'iterations': 16
-    # },
-    # {
-    #     'scenario': 'verylarge',
-    #     'iterations': 5
-    # }
-]
+# configs2 = [
+#     # {
+#     #         'scenario': 'tiny',
+#     #         'iterations': 24
+#     #     },
+#     {
+#         'scenario': 'small',
+#         'iterations': 42
+#     },
+#     #     {
+#     #         'scenario': 'medium',
+#     #         'iterations': 24
+#     #     },
+#     # {
+#     #     'scenario': 'large',
+#     #     'iterations': 16
+#     # },
+#     # {
+#     #     'scenario': 'verylarge',
+#     #     'iterations': 5
+#     # }
+# ]
 
 for config in configs:
 
@@ -74,11 +73,11 @@ for config in configs:
     # results_folder = "results_high_traffic/current/"
     # results_folder = "results_small_hosts/current/"
     # results_folder = "results_big_hosts/current/"
-    results_folder = 'results_average/current/'
+    results_folder = 'small_hosts/results_small_hosts/current/'
 
     # open files to store the result and write headers
-    results_analysis_file = results_folder + "analysis3.csv"
-    results_analysis_average_file = results_folder + "analysis_averages3.csv"
+    results_analysis_file = results_folder + "analysis1.csv"
+    results_analysis_average_file = results_folder + "analysis1_averages.csv"
 
     file = open(results_analysis_file, 'a+')  # save completion time
     file.write(
@@ -120,9 +119,9 @@ for config in configs:
             # pull the information about application deadlines
             # data_folder = "data_slow_traffic/data_" + config['scenario'] + "_" + str(i)
             # data_folder = "data_high_traffic/data_" + config['scenario'] + "_" + str(i)
-            # data_folder = "data_small_hosts/data_" + config['scenario'] + "_" + str(i)
+            data_folder = "small_hosts/data_small_hosts/data_" + config['scenario'] + "_" + str(i)
             # data_folder = "data_big_hosts/data_" + config['scenario'] + "_" + str(i)
-            data_folder = 'data_average/data_' + config['scenario'] + '_' + str(i)
+            # data_folder = 'small_hosts/data_average/data_' + config['scenario'] + '_' + str(i)
             appDefinitionFile = open(data_folder + '/appDefinition.json')
             appDefinition = json.load(appDefinitionFile)
 
