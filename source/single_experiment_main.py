@@ -249,9 +249,9 @@ def run_single_experiment(iteration, algorithms, config, simulationDuration):
     weak_fog_devices = 'small_hosts'  # fog devices with below average resources
     powerful_fog_devices = 'big_hosts'  # fog devices with above average resources
 
-    average = 'average2'
+    # average = 'average2'
 
-    current_setting = average  # third experiment
+    current_setting = high_traffic  # third experiment
 
     folder_results = 'results_' + current_setting + '/current/results_' + config['scenario'] + '_' + str(iteration)
     folder_data = 'data_' + current_setting + '/' + 'data_' + config['scenario'] + '_' + str(iteration)
