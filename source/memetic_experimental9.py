@@ -573,7 +573,8 @@ def report_best_population(pareto_head, hosts, services, h_size, s_size, mlmodel
     for i in range(pareto_size):
         if (fronts_best_P[i] == 1):
             solution = best_P[i]
-            obj_f = objective_functions_best_P[i]
+            first_two_features = np.array((h_size, s_size))
+            obj_f = np.concatenate((first_two_features, objective_functions_best_P[i]), axis=0)
             predicted_value = mlmodel.predict(obj_f.reshape(1, -1))[0]
             cost_solution.append((solution, predicted_value))
     cost_solution = sorted(cost_solution, key=lambda x: x[1])

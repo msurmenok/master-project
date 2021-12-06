@@ -46,7 +46,7 @@ def single_placement(num_creatures, num_generations, folder_results, folder_data
 
     index = 0
     for user in usersInfo:
-        app_num = user['app']
+        app_num = int(user['app'])
         app_info = appDefinition[app_num]
         module = app_info['module'][0]
         # add mapping id to (app id, module id)
@@ -116,7 +116,7 @@ def single_placement(num_creatures, num_generations, folder_results, folder_data
     allocationFile = open(folder_results + "/allocDefinitionMemeticExperimental9.json", "w")
     allocationFile.write(json.dumps(allAlloc))
     allocationFile.close()
-    print("Memetic experimental 8 initial allocation performed!")
+    print("Memetic experimental 9 initial allocation performed!")
     return (servicesInFog, servicesInCloud)
 
 

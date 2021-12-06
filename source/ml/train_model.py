@@ -10,19 +10,30 @@ from joblib import dump, load
 
 filepath1 = 'dataset_small_0.csv'
 filepath2 = 'dataset_small_1.csv'
+filepath3 = 'dataset_medium_0.csv'
 df1 = pd.read_csv(filepath1)
-df2 = pd.read_csv(filepath2)
+df1['fog'] = 20
+df1['services'] = 50
 
-df = pd.concat([df1, df2])
+df2 = pd.read_csv(filepath2)
+df2['fog'] = 20
+df2['services'] = 50
+
+df3 = pd.read_csv(filepath3)
+df3['fog'] = 40
+df3['services'] = 100
+
+df = pd.concat([df1, df2, df3])
+# df = pd.concat([df1, df2])
 df = df[df['algorithm'] == 'MemeticExperimental8']
 
 # print(df.columns)
 
-X = df[['f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7']].to_numpy()
+X = df[['fog', 'services', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7']].to_numpy()
 y = df[['average_total_time']].to_numpy()
 
 # split dataset
-X_train, X_test, y_train, y_test = train_test_split(X, y)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
 y_train = y_train.ravel()
 y_test = y_test.ravel()
 # print(X_train)
@@ -33,7 +44,7 @@ y_test = y_test.ravel()
 # test prediction
 # scaler = preprocessing.StandardScaler().fit(X_train)
 pipe = make_pipeline(StandardScaler(),
-                     MLPRegressor(max_iter=1000, verbose=True))
+                     MLPRegressor(max_iter=1000, verbose=True, hidden_layer_sizes=(100, 100, 80, 50, 20)))
 pipe.fit(X_train, y_train)
 
 print(pipe.score(X_train, y_train))
