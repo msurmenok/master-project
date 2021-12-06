@@ -48,7 +48,7 @@ configs2 = [
     #     },
     {
         'scenario': 'small',
-        'iterations': 44
+        'iterations': 42
     },
     #     {
     #         'scenario': 'medium',

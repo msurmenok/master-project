@@ -27,5 +27,7 @@ source/results_average/
 source/results_average2/
 source/four_objectives/results_four_obj/
 source/ml/mlmodel.joblib
+source/old_results/
+
 
 
