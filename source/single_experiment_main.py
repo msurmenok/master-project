@@ -249,7 +249,7 @@ def run_single_experiment(iteration, algorithms, config, simulationDuration):
     weak_fog_devices = 'small_hosts'  # fog devices with below average resources
     powerful_fog_devices = 'big_hosts'  # fog devices with above average resources
 
-    average = 'average'
+    average = 'average2'
 
     current_setting = average  # third experiment
 
