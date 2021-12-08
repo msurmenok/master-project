@@ -4,6 +4,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
 from sklearn.neural_network import MLPRegressor
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
 import numpy as np
 import pandas as pd
 from joblib import dump, load
@@ -26,6 +27,7 @@ df3['services'] = 100
 df = pd.concat([df1, df2, df3])
 # df = pd.concat([df1, df2])
 df = df[df['algorithm'] == 'MemeticExperimental8']
+df = df[df['average_total_time'] < 200]
 
 # print(df.columns)
 
@@ -51,12 +53,13 @@ print(pipe.score(X_train, y_train))
 print(pipe.score(X_test, y_test))
 
 predicted = pipe.predict(X_test)
-print(predicted)
+msr = mean_squared_error(y_test,predicted, squared=False)
+print("Mean square error = ", msr)
 
-for i in range(len(y_test)):
-    if i == 200:
-        break
-    print(f'test {y_test[i]}, predicted {predicted[i]}')
+# for i in range(len(y_test)):
+#     if i == 200:
+#         break
+#     print(f'test {y_test[i]}, predicted {predicted[i]}')
 
 # save model to the file
 dump(pipe, 'mlmodel.joblib')

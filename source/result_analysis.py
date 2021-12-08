@@ -69,11 +69,12 @@ for config in configs:
     # simulation_time = 10000
     simulation_time = 100000
     num_of_experiments = config['iterations']
-    # results_folder = "results_slow_traffic/current/"
-    # results_folder = "results_high_traffic/current/"
+    # results_folder = "slow_traffic/results_slow_traffic/current/"
+    # results_folder = "high_traffic/results_high_traffic/current/"
     # results_folder = "results_small_hosts/current/"
-    # results_folder = "results_big_hosts/current/"
-    results_folder = 'small_hosts/results_small_hosts/current/'
+    results_folder = "big_hosts/results_big_hosts/current/"
+    # results_folder = 'small_hosts/results_small_hosts/current/'
+    # results_folder = 'average/results_average/current/'
 
     # open files to store the result and write headers
     results_analysis_file = results_folder + "analysis1.csv"
@@ -117,11 +118,11 @@ for config in configs:
                     break
 
             # pull the information about application deadlines
-            # data_folder = "data_slow_traffic/data_" + config['scenario'] + "_" + str(i)
-            # data_folder = "data_high_traffic/data_" + config['scenario'] + "_" + str(i)
-            data_folder = "small_hosts/data_small_hosts/data_" + config['scenario'] + "_" + str(i)
-            # data_folder = "data_big_hosts/data_" + config['scenario'] + "_" + str(i)
-            # data_folder = 'small_hosts/data_average/data_' + config['scenario'] + '_' + str(i)
+            # data_folder = "slow_traffic/data_slow_traffic/data_" + config['scenario'] + "_" + str(i)
+            # data_folder = "high_traffic/data_high_traffic/data_" + config['scenario'] + "_" + str(i)
+            # data_folder = "small_hosts/data_small_hosts/data_" + config['scenario'] + "_" + str(i)
+            data_folder = "big_hosts/data_big_hosts/data_" + config['scenario'] + "_" + str(i)
+            # data_folder = 'average/data_average/data_' + config['scenario'] + '_' + str(i)
             appDefinitionFile = open(data_folder + '/appDefinition.json')
             appDefinition = json.load(appDefinitionFile)
 
